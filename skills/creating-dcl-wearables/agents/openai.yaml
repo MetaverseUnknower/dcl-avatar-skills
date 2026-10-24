@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decentraland Wearables"
+  short_description: "Build, check and ship Decentraland wearables and skins in Blender"
+  default_prompt: "Use $creating-dcl-wearables to check my wearable GLBs against the Decentraland limits."
+policy:
+  allow_implicit_invocation: true

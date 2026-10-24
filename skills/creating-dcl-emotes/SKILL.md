@@ -9,9 +9,9 @@ description: Use when building, fixing, exporting, verifying or uploading a Dece
 
 An emote is a GLB holding one avatar clip on the deform skeleton (`Armature`, 62 `Avatar_*` bones), plus optionally one prop clip on `Armature_Prop`. The female and male bodies share one skeleton, so one GLB serves both, but clipping must be checked on **both** meshes. Builder GLB checks are **warnings**; only >10 s and file size are hard errors. Curation enforces the rest.
 
-**Done means:** `scripts/check_emote.py` reports no FAIL, hand-orientation and prop-normal checks pass, clipping checks pass on every frame for both bodies, and the person you're working with has seen a fresh render of the current version.
+**Done means:** the bundled checker (`scripts/check_emote.py`) reports no FAIL, hand-orientation and prop-normal checks pass, clipping checks pass on every frame for both bodies, and the person you're working with has seen a fresh render of the current version.
 
-Reference files in this folder: `requirements.md` (every documented rule, with sources and conflicts) and `lessons.md` (mistakes made in real emote projects and their fixes). Read `lessons.md` before starting a new emote.
+`<skill-dir>` below is the folder this SKILL.md is in. Reference files there: `requirements.md` (every documented rule, with sources and conflicts) and `lessons.md` (mistakes made in real emote projects and their fixes). Read `lessons.md` before starting a new emote.
 
 ## Workflow
 
@@ -28,7 +28,7 @@ Reference files in this folder: `requirements.md` (every documented rule, with s
 
    | Check | How |
    |---|---|
-   | Doc limits, names, fps, keys, hips travel, frame jumps, prop budget, loop seam | `python3 scripts/check_emote.py <glb> [--loop] [--audio <file>]` |
+   | Doc limits, names, fps, keys, hips travel, frame jumps, prop budget, loop seam | `python3 <skill-dir>/scripts/check_emote.py <glb> [--loop] [--audio <file>]` |
    | 4×4 m box on real meshes | evaluate every frame in Blender; bounds of avatar + props |
    | Limb vs limb, arm vs chest, prop vs body | BVH triangle overlap per frame on the evaluated meshes, both bodies; list intended overlaps explicitly |
    | Hands | measure palm/finger direction from the posed bones each frame against the intent |

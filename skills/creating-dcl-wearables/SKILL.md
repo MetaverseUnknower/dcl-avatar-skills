@@ -9,9 +9,9 @@ description: Use when building, fixing, exporting, verifying or uploading a Dece
 
 A wearable is a skinned GLB on Decentraland's 62-bone `Avatar_*` skeleton, one per body shape (BaseFemale and BaseMale; get the official avatar `.blend` files from the docs). Builder GLB checks are only **warnings**; curation is the real gate. "The Builder accepted it" proves nothing.
 
-**Done means:** `scripts/check_wearable.py` reports no FAIL, a clipping check passes on every frame of Decentraland's real locomotion for **both** body shapes, and the person you're working with has seen a fresh render of the current version.
+**Done means:** the bundled checker (`scripts/check_wearable.py`) reports no FAIL, a clipping check passes on every frame of Decentraland's real locomotion for **both** body shapes, and the person you're working with has seen a fresh render of the current version.
 
-Reference files in this folder: `requirements.md` (every documented rule, with sources and conflicts) and `lessons.md` (mistakes made in real wearable projects and their fixes). Read `lessons.md` before starting a new item.
+`<skill-dir>` below is the folder this SKILL.md is in. Reference files there: `requirements.md` (every documented rule, with sources and conflicts) and `lessons.md` (mistakes made in real wearable projects and their fixes). Read `lessons.md` before starting a new item.
 
 ## Workflow
 
@@ -25,7 +25,7 @@ Reference files in this folder: `requirements.md` (every documented rule, with s
 
    | Check | How |
    |---|---|
-   | Doc limits, skinning, names, alpha, bbox, spring rules | `python3 scripts/check_wearable.py <glb>... --category <c> [--hides a,b] [--strict]` |
+   | Doc limits, skinning, names, alpha, bbox, spring rules | `python3 <skill-dir>/scripts/check_wearable.py <glb>... --category <c> [--hides a,b] [--strict]` |
    | Clipping vs the body | pose the rig, evaluate both meshes, BVH triangle-overlap test; ignore overlaps inside the rest-pose seam regions (dilated ~2 rings) |
    | Real locomotion | Idle/Walk/Jog/Run `.anim` files from decentraland/unity-explorer (see below), every frame |
    | Hand/hip items vs emotes | the built-in emotes from unity-explorer (see below) |

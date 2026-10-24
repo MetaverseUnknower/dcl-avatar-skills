@@ -1,7 +1,8 @@
 # Decentraland avatar skills
 
-Two [agent skills](https://docs.claude.com/en/docs/claude-code/skills) for building Decentraland **wearables** and
-**emotes** with an AI coding agent driving Blender:
+Two [Agent Skills](https://agentskills.io) for building Decentraland **wearables** and **emotes** with an AI coding
+agent driving Blender. They work in **Claude Code**, **OpenAI Codex** and **xAI Grok Build** (and other agents that
+read `SKILL.md` folders):
 
 | Skill | For |
 |---|---|
@@ -37,18 +38,26 @@ against the body still needs a per-frame check in Blender.
 
 ## Install
 
-Claude Code (personal skills):
-
 ```bash
 git clone https://github.com/MetaverseUnknower/dcl-avatar-skills.git
-mkdir -p ~/.claude/skills
-cp -R dcl-avatar-skills/skills/* ~/.claude/skills/
+cd dcl-avatar-skills
+bash install.sh            # Claude Code + Codex + Grok Build
+bash install.sh codex      # or just one: claude | codex | grok
+bash install.sh --link     # symlink instead of copy, so `git pull` updates them
+bash install.sh --project ~/my-wearables   # into one repository instead of your home folder
 ```
 
-Other agents that read `SKILL.md` folders (Codex, Gemini CLI, Copilot CLI): copy the same folders into
-`~/.agents/skills/`.
+Where each agent finds them:
 
-The skills load on their own when a task is about a Decentraland wearable or emote.
+| Agent | Personal | Per repository |
+|---|---|---|
+| Claude Code | `~/.claude/skills/` | `.claude/skills/` |
+| Codex | `~/.agents/skills/` | `.agents/skills/` |
+| Grok Build | `~/.agents/skills/`, `~/.grok/skills/` (also reads Claude Code skills) | `.grok/skills/` |
+
+The skills load on their own when a task is about a Decentraland wearable or emote. To call one explicitly: `/creating-dcl-wearables` in Claude Code or Grok Build, `$creating-dcl-wearables` in Codex. Restart the agent if a newly installed skill doesn't show up.
+
+Grok Build reads both `~/.claude/skills` and `~/.agents/skills`, so with both installed it may list each skill twice; the copies are identical.
 
 ## Contributing
 

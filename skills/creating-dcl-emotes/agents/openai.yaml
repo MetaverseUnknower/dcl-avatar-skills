@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decentraland Emotes"
+  short_description: "Build, check and ship Decentraland emotes (with props and sound) in Blender"
+  default_prompt: "Use $creating-dcl-emotes to check my emote GLB against the Decentraland limits."
+policy:
+  allow_implicit_invocation: true
