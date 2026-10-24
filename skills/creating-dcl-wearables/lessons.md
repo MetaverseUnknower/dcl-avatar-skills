@@ -45,6 +45,17 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   each one; only tucks into skin or the cloth a piece is sewn to are fine (`check_clipping.py` in
   curating-dcl-wearables prints them piece by piece).
 
+- A belt hugging the cloth only at its columns: the straight edge between two columns cuts inside a round seat, so
+  the denim showed through the belt in wedges. → Place each column so the segments to its neighbours clear the cloth
+  (largest cast over the span ÷ cos(offset)), capped at ~1 cm.
+- That same rule on a thigh strap near the crotch cast its side rays into the OTHER leg: the strap bulged out, took
+  that leg's weights and tore through the denim in Walk (0.4 → 4.5 cm). → Leg straps hug their own leg only.
+- A cast that misses (the belt's top row above the lower front waistband) fell back to a fixed 8 cm radius and buried
+  the whole front of the belt inside the body. → Fall back to the neighbouring row's measured radius, never a constant.
+- A strap end hung at an angle within a buckle's width passed through the buckle. → Hang it from just under the
+  buckle (the tail coming out below it), shortened so the tip stays put. A rigid buckle on a flexing band needs the
+  band's per-corner weights or it cuts in when the hips move.
+
 ## Weights and rig
 - A loop that edited weights while iterating them silently dropped most edits. → Read all, then write; re-check the GLB.
 - Straps/decals snapped to the nearest 3 vertices' weights drift in Jog. → Interpolate the underlying polygon's

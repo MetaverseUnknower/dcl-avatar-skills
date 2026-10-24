@@ -1,0 +1,6 @@
+interface:
+  display_name: "Shape a Decentraland Item Idea"
+  short_description: "Turn a wearable or emote idea into a buildable brief by asking the right questions first"
+  default_prompt: "Use $shaping-dcl-item-ideas to help me flesh out my idea for a Decentraland wearable."
+policy:
+  allow_implicit_invocation: true
