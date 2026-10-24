@@ -38,7 +38,8 @@ async def shoot(pw, args, shape, anim, files, item):
     pg = await br.new_page(viewport={'width': args.size, 'height': args.size})
     log = open(args.out + '_console.log', 'a')
     pg.on('console', lambda m: log.write(f'[{shape} {anim}] {m.type} {m.text[:400]}\n'))
-    q = f'?unity=true&mode=builder&profile=default&disableAutoRotate=true&bodyShape={MALE if shape == "male" else FEMALE}&emote={anim}'
+    q = ('?' if args.babylon else '?unity=true&mode=builder&') + \
+        f'profile=default&disableAutoRotate=true&bodyShape={MALE if shape == "male" else FEMALE}&emote={anim}'
     if args.skin:
         q += f'&skin={args.skin}'
     if args.hair:
@@ -74,6 +75,7 @@ async def main():
     ap.add_argument('--boot', type=int, default=25, help='seconds for the Unity player to start')
     ap.add_argument('--settle', type=int, default=12, help='seconds for the item to load')
     ap.add_argument('--raw-hiding', action='store_true', help="don't mirror the Builder's removesDefaultHiding=['hands'] on upper_body")
+    ap.add_argument('--babylon', action='store_true', help='the preview\'s Babylon renderer (plays the emote GLBs fetch_dcl_animations.py downloads) instead of Unity')
     ap.add_argument('--show', action='store_true', help='visible browser window (if headless renders blank)')
     args = ap.parse_args()
     from playwright.async_api import async_playwright

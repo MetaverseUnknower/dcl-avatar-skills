@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Download Decentraland's real avatar animations from decentraland/unity-explorer: the Idle/Walk/Jog/Run locomotion
-clips (Unity .anim) and the built-in emotes (.anim and .glb). check_clipping.py poses the avatar with them.
+"""Download Decentraland's real avatar animations for check_clipping.py:
+  - decentraland/unity-explorer: Idle/Walk/Jog/Run locomotion (Unity .anim) and the explorer's built-in emotes;
+  - decentraland/wearable-preview: the emote-wheel emotes the Builder and Marketplace previews play (dance, clap, dab,
+    wave, money, love, fashion, fist-pump, head-explode, jump) and the per-category showcase animations shoppers see
+    (saved as showcase_<name>.glb).
 
 usage: python3 fetch_dcl_animations.py [out_dir]      (default ~/.cache/dcl-animations; skips files already there)
 """
@@ -16,6 +19,16 @@ FILES = [LOCO + n for n in ('Idle.anim', 'Walk.anim', 'Jog.anim', 'Run.anim')] +
     'GetHit/Get_Hit.glb', 'KnockOut/KO.glb', 'OpenDoor/OpenDoor.glb', 'Lever/Lever.glb', 'OpenChest/OpenChest.glb',
     'SwingWeaponOneHand/Swing_OneHand.glb', 'SwingWeaponTwoHands/Swing_DoubleHanded.glb',
     'SittingChair1/SittingChair_v01.glb', 'SittingGround1/SittingGround_v01.glb')]
+PREVIEW = 'decentraland/wearable-preview'
+WHEEL = ['clap', 'dab', 'dance', 'fashion', 'fashion-2', 'fashion-3', 'fashion-4', 'fist-pump', 'head-explode',
+         'jump', 'love', 'money', 'wave']
+SHOWCASE = ['Accessories_v01', 'Accessories_v02', 'Accessories_v03', 'Outfit_Hand_v01', 'Outfit_Hand_v02',
+            'Outfit_Lower_v01', 'Outfit_Lower_v02', 'Outfit_Lower_v03', 'Outfit_Shoes_v01', 'Outfit_Shoes_v02',
+            'Outfit_Upper_v01', 'Outfit_Upper_v02', 'Outfit_Upper_v03', 'Wave_Female', 'Wave_Male']
+
+
+def preview_url(path):
+    return f'https://raw.githubusercontent.com/{PREVIEW}/master/public/emotes/{path}'
 
 
 def url(path):
@@ -27,17 +40,21 @@ def url(path):
 def main():
     out = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else '~/.cache/dcl-animations')
     os.makedirs(out, exist_ok=True)
-    for path in FILES:
-        dest = os.path.join(out, os.path.basename(path))
+    jobs = [(url(p), os.path.basename(p)) for p in FILES]
+    jobs += [(preview_url(f'{n}.glb'), f'{n}.glb') for n in WHEEL]
+    jobs += [(preview_url(f'character/{n}.glb'), f'showcase_{n}.glb') for n in SHOWCASE]
+    for src, name in jobs:
+        dest = os.path.join(out, name)
+        path = src
         if os.path.exists(dest) and os.path.getsize(dest) > 1000:
             continue
         try:
-            data = urllib.request.urlopen(url(path), timeout=120).read()
+            data = urllib.request.urlopen(src, timeout=120).read()
         except Exception as e:
             print(f'skip {path}: {e}')
             continue
-        if data.startswith(b'version https://git-lfs'):
-            print(f'skip {path}: got an LFS pointer, not the file')
+        if data.startswith(b'version https://git-lfs') or not (data[:4] == b'glTF' or name.endswith('.anim')):
+            print(f'skip {path}: not an animation file (LFS pointer or missing)')
             continue
         open(dest, 'wb').write(data)
         print(f'{dest} ({len(data) // 1024} KB)')

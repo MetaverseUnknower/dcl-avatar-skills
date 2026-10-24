@@ -39,9 +39,9 @@ Curator scripts (`skills/curating-dcl-wearables/scripts/`), each usable on its o
 |---|---|---|
 | `package_item.py` | builds the Builder item zip (`wearable.json` + GLBs + thumbnail) that Decentraland's official validator (`npx @dcl-regenesislabs/wearable-validator validate item.zip`) fully checks | Python |
 | `check_thumbnail.py` | square / size / transparency like the validator, plus framing and stray graphics or logos (corner, ideally bottom right) | Pillow, numpy |
-| `fetch_dcl_animations.py` | downloads Decentraland's real Idle/Walk/Jog/Run and built-in emotes from unity-explorer | Python |
-| `check_clipping.py` | poses the official avatar through those clips in Blender and intersects triangles every frame: item vs body and item piece vs piece, rest overlaps listed piece by piece | Blender, the avatar .blend |
-| `preview_wearable.py` | renders local GLBs on the avatar in Decentraland's Unity preview (idle/walk/run/emotes, both body shapes) before uploading | Chrome, Playwright |
+| `fetch_dcl_animations.py` | downloads 50 of Decentraland's real animations: Idle/Walk/Jog/Run, the explorer's built-in emotes, the emote-wheel emotes and the per-category showcase animations | Python |
+| `check_clipping.py` | poses the official avatar through every frame of those clips in Blender and intersects triangles: item vs body and item piece vs piece, with penetration depth, rest overlaps listed piece by piece, and the clips that must pass chosen per item | Blender, the avatar .blend |
+| `preview_wearable.py` | renders local GLBs on the avatar in Decentraland's preview (Unity, or `--babylon`), any animation, both body shapes, before uploading | Chrome, Playwright |
 | `explorer.py` | cold-starts the desktop explorer with an unpublished Builder collection in self-preview and drives it through the explorer's MCP server (screenshots, camera, walking, emotes, UI) | Decentraland desktop app |
 
 FAIL means a documented rule is broken, WARN means a Builder warning or a known in-world problem, and INFO is a

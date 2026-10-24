@@ -52,7 +52,14 @@ square, ≤1024 px, ≤1 MB, ≥90% of the outermost pixel ring with alpha ≤8.
 whole head caps at 4,000.
 
 ## Clipping animations (fetch_dcl_animations.py)
-decentraland/unity-explorer `Explorer/Assets/DCL/AvatarRendering/AvatarShape/Assets/Animations/{Idle,Walk,Jog,Run}.anim`
-and `.../Emotes/EmbeddedEmotes/CommonEmotes/<Emote>/<file>` (.glb files are Git LFS: fetch from
-media.githubusercontent.com). Unity local rotations map to the Blender rig with `Quaternion((w, x, -y, -z))` and
-`pose = rest_local⁻¹ @ q`.
+- decentraland/unity-explorer `Explorer/Assets/DCL/AvatarRendering/AvatarShape/Assets/Animations/{Idle,Walk,Jog,Run}.anim`
+  and `.../Emotes/EmbeddedEmotes/CommonEmotes/<Emote>/<file>` (.glb files are Git LFS: fetch from
+  media.githubusercontent.com). Unity local rotations map to the Blender rig with `Quaternion((w, x, -y, -z))` and
+  `pose = rest_local⁻¹ @ q`.
+- decentraland/wearable-preview `public/emotes/<name>.glb` (emote wheel) and `public/emotes/character/<name>.glb`
+  (category showcase), also served from `cdn.decentraland.org/@dcl/wearable-preview/<version>/emotes/`. These are what
+  the preview's Babylon renderer plays; its Unity mode and the explorer use their own embedded versions.
+- The emote-wheel files are **unskinned** and store their **first frame** as node TRS, so they carry no bind pose.
+  check_clipping.py measures them against the wearable's own node TRS (wearables export in the rest pose, same rig).
+  Checked: on a skinned emote (KO) both methods agree to 0 degrees on every bone; posed renders of clap/dance match the
+  Babylon preview of the same files.

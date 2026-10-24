@@ -21,7 +21,7 @@ Run each for **both body shapes**. A FAIL stops the review: report it and hand i
 |---|---|---|---|
 | 1 | Doc limits | `check_wearable.py` from the sibling `creating-dcl-wearables` skill, then `package_item.py` + the official validator (below) | no FAIL, and the validator says PASSED |
 | 2 | Thumbnail | `check_thumbnail.py`, then look at it | no FAIL; WARNs judged |
-| 3 | Clipping | `fetch_dcl_animations.py` once, then `check_clipping.py` per body shape | Idle/Walk/Jog PASS; every REST piece overlap judged; Run/emote reports reviewed |
+| 3 | Clipping | `fetch_dcl_animations.py` once, then `check_clipping.py` per body shape | every gated clip PASSES; every REST piece overlap judged; ungated clips reviewed |
 | 4 | Real renderer | `preview_wearable.py` idle/walk/run, both shapes | images look right (hands present, nothing missing, no poke-through) |
 | 5 | Builder | upload, set every field, read the validation panel, preview | no FAIL badge, warnings explained, item "Ready to submit" |
 | 6 | In-world | `explorer.py` self-preview + MCP screenshots | item equips and looks right from all sides, walking, running, emoting |
@@ -47,17 +47,30 @@ This is Decentraland's own curation rule book as code (DAO-mandated). A bare GLB
 The avatar .blend: the official base avatar file for that body shape, with meshes named like `*uBody*`, `*lBody*`, `*Feet*`, `*Hands*`, `*Head*` on the 62-bone `Armature` (tested with the BaseFemale/BaseMale avatar shape files; the emote rig `Avatar_File.blend` hasn't been tried).
 
 ```bash
-python3 <skill-dir>/scripts/fetch_dcl_animations.py              # Idle/Walk/Jog/Run + built-in emotes
+python3 <skill-dir>/scripts/fetch_dcl_animations.py              # 50 clips, once
 blender -b <BaseFemale avatar .blend> --python <skill-dir>/scripts/check_clipping.py -- \
-    --glb item_female.glb --category <c> [--hides a,b] --json clip_female.json
-# then the same with the BaseMale .blend and item_male.glb
+    --glb item_female.glb --category <c> [--hides a,b] [--gate ...] [--except ...] --json clip_female.json
+# then the same with the BaseMale .blend and item_male.glb (about 45 s per body shape)
 ```
 
-It poses the official avatar through Decentraland's real clips and intersects triangles every frame: item vs each visible body part, and **item piece vs item piece**.
-- **REST lines are the trap.** Overlaps present at rest are not counted in motion, so the script lists them for you to judge, piece by piece with sizes and positions. A collar in the neck, or a strap lying on the cloth it's sewn to, is fine. A strap, plate or tab through a buckle or another hard piece is a bug, even if nothing moves. Name each one in the report.
-- **Gate:** Idle/Walk/Jog must PASS. Contacts tagged `bare hand already in thigh` are Decentraland's own female idle and are not the item's fault.
-- **Run and emotes** are reported, not gated: the bare avatar clips itself in some Run frames, and rigid items can't clear every emote. Summarize which ones clip and where.
-- Spring-bone pieces are checked at rest only; the explorer simulates them, so look at them in motion in gates 4 and 6.
+**What it plays.** Every frame (30 fps) of:
+- Idle, Walk, Jog and Run;
+- the explorer's built-in emotes (wave, victory, hands in the air, fist pump, crafting, point, punch, push, throw, get hit, KO, open door, lever, open chest, weapon swings, sitting on a chair and on the ground);
+- the emote-wheel emotes (dance, clap, dab, wave, money, love, fashion 1–4, fist-pump, head-explode, jump). These come from the preview's Babylon files, which are close to the in-world Unity versions but not identical (the clap is chin-high in one and chest-high in the other), so confirm the ones that matter with `trigger_emote` in gate 6;
+- the `showcase_*` animations the Marketplace and Builder previews play for each category. Shoppers see these.
+
+**What it measures**, every frame, as triangle overlap on the posed meshes: the item against each body part it doesn't hide, and **each item piece against the others**. Each overlap gets a **depth**: how far the triangles pass through each other, in cm. Anything deeper than `--depth` (default 0.3 cm) is a clip; shallower contacts are counted as grazes. The output names the deepest frames, what they hit, and where (bone and position).
+
+**REST lines are the trap.** Overlaps already present at rest aren't counted in motion, so the script lists them for you to judge, piece by piece, with size, position and depth. A collar in the neck, or a strap lying on the cloth it's sewn to, is fine. A strap, plate or tab through a buckle or another hard piece is a bug even if nothing moves. Name each one in the report.
+
+**What must pass** is your call per item, set with `--gate`:
+- The default is Idle, Walk and Jog. The bare avatar clips itself in some Run frames, and rigid items can't clear every emote.
+- For clothing, also gate the matching showcase clips, since buyers watch them: `--gate Idle,Walk,Jog,showcase_Outfit_Upper_v01,showcase_Outfit_Upper_v02,showcase_Outfit_Upper_v03`. The others are Outfit_Lower (lower_body), Outfit_Shoes (feet), Outfit_Hand (hands_wear) and Accessories.
+- For a "clean in every emote" item: `--gate all --except SittingChair_v01,SittingGround_v01,KO,Run`.
+- Contacts tagged `bare hand already in thigh` are Decentraland's own female idle, not the item.
+- Reported (ungated) clips still go in the verdict: which clips clip, how deep, and where.
+- Spring-bone pieces are checked at rest only; the explorer simulates them, so watch them in gates 4 and 6.
+- Iterate on one clip with `--only Jog`.
 
 ### 4. The real renderer, before uploading
 
