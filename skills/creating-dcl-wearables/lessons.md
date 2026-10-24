@@ -40,6 +40,11 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
 - Rigid hand props can't pass the sitting/KO/hands-together emotes. → Report which emotes fail; don't claim none.
 - Vertex-inside tests miss long props through limbs. → Triangle overlap (BVH).
 
+- Rest-pose seam allowances hide real bugs: a clip gate that ignored every overlap present at rest silently
+  accepted a webbing strap passing through its own buckle. → List every rest overlap between item pieces and judge
+  each one; only tucks into skin or the cloth a piece is sewn to are fine (`check_clipping.py` in
+  curating-dcl-wearables prints them piece by piece).
+
 ## Weights and rig
 - A loop that edited weights while iterating them silently dropped most edits. → Read all, then write; re-check the GLB.
 - Straps/decals snapped to the nearest 3 vertices' weights drift in Jog. → Interpolate the underlying polygon's

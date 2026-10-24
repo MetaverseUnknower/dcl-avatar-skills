@@ -34,6 +34,7 @@ A wearable is a skinned GLB on Decentraland's 62-bone `Avatar_*` skeleton, one p
    New checker? Run it on a known-bad file first and watch it fail. A zero is suspicious until proven.
 4. **Render** with the base body visible under the item, the way the Builder shows it, after every change, and show that render, not a close-up from an untextured test scene.
 5. **Hand off** a sheet per item: category, hides, files per body shape, tri counts, spring table (root bone, stiffness, gravity power, drag, Center), thumbnail, description ≤64 chars. Thumbnail: 256 px square PNG, transparent background, item only.
+6. **Review** before calling it ready for submission: run the `curating-dcl-wearables` skill (official validator, thumbnail, clipping through Decentraland's animations, Builder, in-world).
 
 ## Decentraland's real animations
 

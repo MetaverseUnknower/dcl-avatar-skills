@@ -1,6 +1,6 @@
 # Decentraland avatar skills
 
-Two [Agent Skills](https://agentskills.io) for building Decentraland **wearables** and **emotes** with an AI coding
+[Agent Skills](https://agentskills.io) for building and reviewing Decentraland **wearables** and **emotes** with an AI coding
 agent driving Blender. They work in **Claude Code**, **OpenAI Codex** and **xAI Grok Build** (and other agents that
 read `SKILL.md` folders):
 
@@ -8,6 +8,7 @@ read `SKILL.md` folders):
 |---|---|
 | [`creating-dcl-wearables`](skills/creating-dcl-wearables/SKILL.md) | hair, hats, helmets, masks, upper/lower body, feet, hands_wear, accessories, skins |
 | [`creating-dcl-emotes`](skills/creating-dcl-emotes/SKILL.md) | avatar animations, with or without props, sound and baked particles |
+| [`curating-dcl-wearables`](skills/curating-dcl-wearables/SKILL.md) | reviewing a built wearable like the Curation Committee: official validator, thumbnail, clipping through Decentraland's animations, Builder upload and checks, in-world self-preview, verdict |
 
 Each skill has:
 
@@ -31,6 +32,17 @@ python3 skills/creating-dcl-wearables/scripts/check_wearable.py hat_male.glb hat
 # bone-scale blow-ups on cross-fade, loop seam, prop budget, audio.
 python3 skills/creating-dcl-emotes/scripts/check_emote.py Wave.glb --loop --audio Wave.mp3
 ```
+
+Curator scripts (`skills/curating-dcl-wearables/scripts/`), each usable on its own:
+
+| Script | Does | Needs |
+|---|---|---|
+| `package_item.py` | builds the Builder item zip (`wearable.json` + GLBs + thumbnail) that Decentraland's official validator (`npx @dcl-regenesislabs/wearable-validator validate item.zip`) fully checks | Python |
+| `check_thumbnail.py` | square / size / transparency like the validator, plus framing and stray graphics or logos (corner, ideally bottom right) | Pillow, numpy |
+| `fetch_dcl_animations.py` | downloads Decentraland's real Idle/Walk/Jog/Run and built-in emotes from unity-explorer | Python |
+| `check_clipping.py` | poses the official avatar through those clips in Blender and intersects triangles every frame: item vs body and item piece vs piece, rest overlaps listed piece by piece | Blender, the avatar .blend |
+| `preview_wearable.py` | renders local GLBs on the avatar in Decentraland's Unity preview (idle/walk/run/emotes, both body shapes) before uploading | Chrome, Playwright |
+| `explorer.py` | cold-starts the desktop explorer with an unpublished Builder collection in self-preview and drives it through the explorer's MCP server (screenshots, camera, walking, emotes, UI) | Decentraland desktop app |
 
 FAIL means a documented rule is broken, WARN means a Builder warning or a known in-world problem, and INFO is a
 number to read. The exit code is 1 on any FAIL, so they work in build scripts. They read only the GLB: clipping

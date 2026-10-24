@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decentraland Wearable Curator"
+  short_description: "Review a built wearable like a curator: validator, thumbnail, clipping, Builder, in-world"
+  default_prompt: "Use $curating-dcl-wearables to review my wearable before I submit it for curation."
+policy:
+  allow_implicit_invocation: true
