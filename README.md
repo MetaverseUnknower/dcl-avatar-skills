@@ -9,9 +9,10 @@ read `SKILL.md` folders):
 | [`shaping-dcl-item-ideas`](skills/shaping-dcl-item-ideas/SKILL.md) | before building: asks the questions that turn an idea into a buildable brief (slot and budget, fit, motion, emote length and loop, props, IP and curation rules, release details) |
 | [`creating-dcl-wearables`](skills/creating-dcl-wearables/SKILL.md) | hair, hats, helmets, masks, upper/lower body, feet, hands_wear, accessories, skins |
 | [`creating-dcl-emotes`](skills/creating-dcl-emotes/SKILL.md) | avatar animations, with or without props, sound and baked particles |
+| [`listing-dcl-wearables`](skills/listing-dcl-wearables/SKILL.md) | after review: rarity per piece, names, descriptions, utility and tags written for the Marketplace (checked by `check_listing.py`), then the Builder upload |
 | [`curating-dcl-wearables`](skills/curating-dcl-wearables/SKILL.md) | reviewing a built wearable like the Curation Committee: official validator, thumbnail, clipping through Decentraland's animations, Builder upload and checks, in-world self-preview, verdict |
 
-Each of the two `creating-*` skills has (the curator has its own `references.md` and scripts; the idea-shaper is a single `SKILL.md`):
+Each of the two `creating-*` skills has (the curator has its own `references.md` and scripts, the lister a `check_listing.py`, and the idea-shaper is a single `SKILL.md`):
 
 - **`SKILL.md`**: the workflow, a quick-reference table of limits, rig facts and the pitfalls that keep coming back.
 - **`requirements.md`**: every rule from the Decentraland docs, cross-checked against the Builder, content-validator,

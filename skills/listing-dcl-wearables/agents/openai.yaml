@@ -1,0 +1,6 @@
+interface:
+  display_name: "List Wearables in the Builder"
+  short_description: "Pick rarities, write names, descriptions, utility and tags, then upload to the Decentraland Builder"
+  default_prompt: "Use $listing-dcl-wearables to prepare my wearables' Builder listing and upload them."
+policy:
+  allow_implicit_invocation: true
