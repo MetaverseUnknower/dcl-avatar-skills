@@ -20,7 +20,7 @@ A wearable is a skinned GLB on Decentraland's 62-bone `Avatar_*` skeleton, one p
    - IP: sold items must be original designs. Decline "exactly like <real character>" and offer a parody.
    - Hides/replaces: decide now (a full helmet: head, hair, facial_hair, hat, eyewear, earring, tiara, top_head). They change the triangle budget and what must be rendered.
    - Budget: the category's tris (+ hidden categories'), 2 materials, 2 textures, per item.
-2. **Script the build** (Blender Python) so both body shapes come from one source and every fix is repeatable. Select geometry by position, never by bone weights (the two bodies differ). Delete and recreate Blender images each build.
+2. **Script the build** (Blender Python) so both body shapes come from one source and every fix is repeatable. Select geometry by position, never by bone weights (the two bodies differ). Delete and recreate Blender images each build. If a proven-examples library is available, study the closest examples first (see **Proven examples** below).
 3. **Check the export:**
 
    | Check | How |
@@ -35,6 +35,16 @@ A wearable is a skinned GLB on Decentraland's 62-bone `Avatar_*` skeleton, one p
 4. **Render** with the base body visible under the item, the way the Builder shows it, after every change, and show that render, not a close-up from an untextured test scene.
 5. **Hand off** a sheet per item: category, hides, files per body shape, tri counts, spring table (root bone, stiffness, gravity power, drag, Center), thumbnail, description ≤64 chars. Thumbnail: 256 px square PNG, transparent background, item only.
 6. **Review** before calling it ready for submission: run the `curating-dcl-wearables` skill (official validator, thumbnail, clipping through Decentraland's animations, Builder, in-world).
+
+## Proven examples (optional)
+
+Some teams keep a private library of items that passed curation, with the scripts that built them: `INDEX.md` (items ranked by evidence), `examples/<project>/<item>.json` (record), `scripts/`, `glb/`. Use it if `$DCL_EXAMPLES` is set or `~/-Decentraland/dcl-avatar-examples` exists; otherwise skip this section.
+
+1. Read `INDEX.md` and pick the 2–3 highest-ranked items in the **same category** (then the nearest one: hair for a hat with hair, upper_body for a full outfit).
+2. Read each record's `summary`, `hides`, `notes` and `checks`, then its build script: how it fits both bodies, weights, springs or rigid parts, materials and textures, export, and which checks it ran.
+3. Reuse **techniques and helper code, never the design.** A new item must be original: don't reproduce an existing item's shape, texture or look.
+4. Never paste an example script, or large parts of it, into a reply or a deliverable. The library is private.
+5. If a record's checker results disagree with its curation evidence (e.g. a FAIL on an approved item), point it out to the person rather than trusting either one blindly.
 
 ## Decentraland's real animations
 

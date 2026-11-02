@@ -21,7 +21,7 @@ An emote is a GLB holding one avatar clip on the deform skeleton (`Armature`, 62
    - Hips stay within 1 m horizontally; everything inside a 4×4 m box, ≤4 m high.
    - Audio must be original (.mp3/.ogg, same length as the clip). Particle systems aren't allowed.
    - Category: dance, stunt, greetings, fun, poses, reactions, horror, miscellaneous.
-2. **Script the animation** (Blender Python) on the official avatar rig, so every fix is repeatable. Build small helpers once: aim a bone at a direction, two-bone arm/leg IK that takes an explicit **palm** direction, finger curl, and a floor guard.
+2. **Script the animation** (Blender Python) on the official avatar rig, so every fix is repeatable. Build small helpers once: aim a bone at a direction, two-bone arm/leg IK that takes an explicit **palm** direction, finger curl, and a floor guard. If a proven-examples library is available, study the closest examples first (see **Proven examples** below).
 3. **Props** live on a separate `Armature_Prop`. For a prop held or worn, add prop bones that copy the avatar bone (Copy Transforms), then bake them to keys at export.
 4. **Export only keyed channels.** Force-sampling writes T/R/S for all 62 bones and pushed a 9.5 s emote past 1 MB. Key all 62 bones on the first and last frame.
 5. **Check:**
@@ -39,6 +39,16 @@ An emote is a GLB holding one avatar clip on the deform skeleton (`Armature`, 62
    New checker? Run it on a known-bad file first and watch it fail.
 6. **Render** after every change, props seen from front, below, above and mid-action, and show that render.
 7. **Upload:** in the Builder, select the item by clicking it in the list and confirm the id, then set every field (a re-upload resets Play mode). The editor plays emotes **once** even on Loop, so loops are only verifiable in-world.
+
+## Proven examples (optional)
+
+Some teams keep a private library of emotes that passed curation, with the scripts that built them: `INDEX.md` (items ranked by evidence), `examples/<project>/<item>.json` (record), `scripts/`, `glb/`. Use it if `$DCL_EXAMPLES` is set or `~/-Decentraland/dcl-avatar-examples` exists; otherwise skip this section.
+
+1. Read `INDEX.md` and pick the 2–3 highest-ranked emotes closest to the brief: same play type (loop or one-shot), then the same kind of prop, sound, scale trick or contact (floor, body, another object).
+2. Read each record's `summary`, `notes` and `checks`, then its build script and any shared helper library it imports: how it poses hands, keys the loop seam, rigs and bakes props, guards against clipping, and exports.
+3. Reuse **techniques and helper code, never the design.** A new emote must be original: don't reproduce an existing emote's motion, prop or concept.
+4. Never paste an example script, or large parts of it, into a reply or a deliverable. The library is private.
+5. If a record's checker results disagree with its curation evidence (e.g. a FAIL on an approved emote), point it out to the person rather than trusting either one blindly.
 
 ## Quick reference
 
