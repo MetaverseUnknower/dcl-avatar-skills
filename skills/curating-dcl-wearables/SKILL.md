@@ -88,7 +88,7 @@ Drive it in the user's browser with whatever browser automation you have; the us
 7. Preview: switch the body shape, play idle, walk, run and a few emotes (dance, wave, fist-pump), and try different skin and hair colours. Hides apply live.
 8. Price is the user's decision: ask, then set it (or **Make it free**) and check that the collection page shows the item as **Ready to submit**.
 
-Gotchas: loading an item-editor URL doesn't change the selected item; click it in the left list and confirm the id. Re-uploading a GLB resets the spring-bone settings: enter them again.
+Gotchas: loading an item-editor URL doesn't change the selected item; click it in the left list and confirm the id. Re-uploading a GLB resets the spring-bone settings: enter them again. Replacing a GLB through the item page's **Representations → Edit** defaults to **Both** and drops the other body shape even if you pick one: re-add it (**Add**), re-set the thumbnail (the GLB upload swaps in the Builder's own render; the custom one comes back re-encoded at 1024 px), re-enter springs on both tabs, then reload and read every field back. This Builder has no price field before publishing; prices are set after approval (a wallet transaction).
 
 ### 6. In-world, before publishing
 

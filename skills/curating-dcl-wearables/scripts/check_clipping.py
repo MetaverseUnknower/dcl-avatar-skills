@@ -196,6 +196,16 @@ def nearest_bone(o, poly):
     return w.most_common(1)[0][0] if w else '?'
 
 
+def ITEM_W(o, poly):
+    """Summed vertex weights of one polygon, by bone (for CLIP_DUMP)."""
+    gname = {g.index: g.name for g in o.vertex_groups}
+    w = collections.Counter()
+    for v in o.data.polygons[poly].vertices:
+        for g in o.data.vertices[v].groups:
+            w[gname[g.group]] += g.weight / len(o.data.polygons[poly].vertices)
+    return dict(w)
+
+
 def where(label, pairs, snap):
     o = bpy.data.objects[label.split(' x ')[0]]
     a = sorted(pairs)[len(pairs) // 2][0]
@@ -526,6 +536,13 @@ for name, frames in clips:
                 bare_hand_thigh = bool(hands and lbody and Snap(hands).tree.overlap(Snap(lbody).tree))
             tag = ' (bare hand already in thigh)' if bare_hand_thigh and ('hands' in label or 'lbody' in label) else ''
             hits[label + tag] = (len(new_pairs), d * 100, where(label, new_pairs, sa))
+            if os.environ.get('CLIP_DUMP') and not bad:    # CLIP_DUMP=1: the clipping polygons of a clip's first bad frame
+                oa, ob = bpy.data.objects[label.split(' x ')[0]], visible.get(label.split(' x ')[1].split(' (')[0])
+                for pa_, pb_ in sorted(new_pairs)[:8]:
+                    wa = {g: round(w, 2) for g, w in ITEM_W(oa, pa_).items()}
+                    wb = {g: round(w, 2) for g, w in ITEM_W(ob, pb_).items()} if ob else {}
+                    print(f'           dump {label} item poly {pa_} @ {tuple(round(x * 100, 1) for x in sa.centres[pa_])} {wa}'
+                          f'  x  body poly {pb_} @ {tuple(round(x * 100, 1) for x in sb.centres[pb_])} {wb}')
             worst = max(worst, d * 100)
         if hits:
             bad.append((i, hits))

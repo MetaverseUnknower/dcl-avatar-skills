@@ -55,6 +55,31 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
 - A strap end hung at an angle within a buckle's width passed through the buckle. → Hang it from just under the
   buckle (the tail coming out below it), shortened so the tip stays put. A rigid buckle on a flexing band needs the
   band's per-corner weights or it cuts in when the hips move.
+- **Skirts and tabards on a skin.** Any cloth beside the thigh at 80–93 cm hits the idle hands (male hands rest ~0.2 cm
+  off the bare thigh; female wrists rest on the hips at belt height). → Side vents from ~93 cm down, snug sides, thin
+  wrist cuffs. Front panels follow the thigh only below the hip joint (~94 cm), or a lifted knee rotates cloth up into
+  the belly; the female body needs ~6 cm extra front room vs ~3.5 cm male, and more than that hits her hands in Walk.
+  Female hand-to-hip contact at the belt can't be fully cleared.
+- **Cross-sections measured on trimmed meshes collapsed a skirt.** After trimming, some heights had no geometry and the
+  convex hull silently returned -1e9. → Measure on the untrimmed base meshes, slicing edges, not vertex bands.
+- **Skin-tight layers over bare skin showed skin through.** Other lower_body items (shorts, skirts) bring their own leg
+  skin on the same surface as the base leg; a layer 0.06–0.25 cm off it showed skin through it in the Builder. → Keep
+  at least ~0.3 cm wherever it can be seen bare, end the layer below where your own skinny pants hug the leg instead of
+  thinning it there, and check against the base-avatar shorts.
+- **A skin-hugging shell needs ~4 mm, not 2.** At 2 mm Blender showed no gap and nothing under the skin in any pose, but
+  the Builder's renderer showed skin through it in big triangles. Lifted ~4.5 mm (≥3.5 mm where it's drawn) it
+  renders solid. → Check the Builder preview close-up for any shell that sits on skin.
+- **A low-poly quad's diagonal reads as a straight crease on curved shapes** (the inner half of a seat was one quad from
+  the split to the peak). → Count the verts across a curved region before tuning the shaping function; add an edge line
+  there and bow it out to a round profile. Reshaping the falloff alone can't curve a single facet.
+- **Denim bridges the cleft; it isn't skin tight.** Cheek to cheek the fabric spans the crack with a shallow dip (under
+  1 cm), and the leg split opens below the cheeks, not at crotch height. → Any "move verts toward the back surface"
+  pass needs a height limit, or it drags the crotch's front verts back too; check the crotch line front to back.
+- **Pieces of a set clipped once combined.** Clip checks that left swinging spring-bone strap ends out missed real
+  contacts: a belt-strap end through a glove's backswing in Walk, a shin strap draped over new boots. → When a set
+  grows, run an all-pairs overlap check of every worn mesh, springs included, at rest and through Idle/Walk/Jog. Fix
+  per body shape (the clear spot differs between the round and flat seat), and re-run motion: a shortened chain needs
+  more stiffness or it flails in Run.
 
 ## Weights and rig
 - A loop that edited weights while iterating them silently dropped most edits. → Read all, then write; re-check the GLB.
@@ -67,6 +92,26 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   (`(Σ w·(pose @ bone.matrix_local⁻¹))⁻¹ @ v`); forelegs on the arm bones swing like lances, so weight a lower foreleg
   down the **opposite** leg chain (Walk swings each arm with the opposite leg → diagonal trot). Keep foot tips within
   ~10 cm of the human foot's height.
+- **A long cape on chains rooted at Spine2 was sent back by curation.** It sagged onto the seat, and every emote that
+  turns or tilts the hips against the chest put the skirt through it (13 of 17 built-in emotes); the cape check had only
+  tested legs and hands in the locomotion cycles. → Root the chains of anything hanging below the waist at
+  `Avatar_Hips` (upper part on Spine2, blended over the waist), keep gravity well under stiffness (e.g. 2.0 / 0.3), and
+  run the spring simulation through the emotes against the whole body. That brought it to 3 of 17, only big leg moves.
+- **A cape that cleared the heels in a forward-moving spring sim showed boots through it in the Builder.** The preview
+  walks in place, so the cape never trails, and vertex-depth checks miss a boot through the middle of a big triangle. →
+  Simulate locomotion in place too, count limb-vs-cape triangle crossings, keep a long hem well back from the heels.
+- **Pushing a cape far off the upper back for arm clearance read as a hump.** → One straight slant from the collar to
+  the seat, widened only below the swinging hands. Classify a solidified piece's lining per shell, not per face.
+- **Facial hair rides the skin under it, and the jaw's underside is partly neck.** A beard weighted 100% to
+  `Avatar_Head` cut 0.8 cm into the head in Walk/Jog: the base head weights the underside of the jaw and chin 10–55% to
+  `Avatar_Neck`, and that skin hinges up when the head nods. → Copy weights from the head triangle under each vertex
+  (barycentric) and keep a strap beard on the front of the jaw and chin. A vertex-only skin-gap check passed while faces
+  dipped 0.2 cm under the low-poly head between their corners: sample points inside every face.
+  `check_clipping.py` with `CLIP_DUMP=1` prints the clipping polygons and their weights.
+- **A full beard is the head's own faces, lifted.** Copying the base head's faces over the beard region and inflating
+  them keeps the head's skin weights, so the beard follows the face in every pose (a projected grid needed weight
+  transfers and still looked wonky). Paint the outline, mouth gap and details in the alpha by 3D position; trace the
+  mouth gap from the base mouth card's opaque texels, and drop big faces that reach outside the outline.
 
 ## Textures and materials
 - 2 materials / 2 textures: a third slipped in unnoticed. → Atlas; count before reporting.
@@ -89,8 +134,34 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
 - Flat-shaded cloth gives a checkerboard of sheen. → Smooth-shade cloth.
 - Face paint: copy the front of the base head mesh, lift ~0.15 cm, MASK texture, cut holes where the eye/mouth cards
   are opaque, ship in a hair-slot item (1.5K) so the real head shows.
+- **"hair" in a material name tints it with the player's hair colour.** The explorer matches "hair" anywhere in the
+  material name, case-insensitive, and multiplies the base colour (emission is copied untinted). → Fixed-colour hair
+  needs a material name without "hair" or "skin". For player-coloured hair with fixed accents: a "hair" material with a
+  light-grey shading texture (plus an emissive map for glowing details) and a separate untinted accent material. The
+  explorer also forces back-face culling on avatar materials: strands need closed volume.
+- **Grey hairs on a hair-tinted item go in emission.** The tint multiplies the whole base texture, so no texel stays
+  grey. → Put the grey strands in a glow texture on emission. Fine strands painted straight at 512 turn into square
+  pixels: paint at 1024 and area-average down to 512.
+- **A logo stamp flattened a strap into a coloured block.** Filling the tag with a flat averaged ground lost the strap's
+  own texture. → Copy the old texels into the new UV spot and outline the logo darkly so stripes don't cross it.
+- **Facial features (eyes, eyebrows, mouth) are PNG sets, and the mask is inverted.** A 256 px RGBA texture on the base
+  eye card's layout (both eyes in the top ~40%) plus a `_mask` PNG in the same representation. **Black in the mask =
+  tinted by the player's colour, white = keeps the drawing's own colour.** A white-iris mask shipped once and the eyes
+  never took the eye colour. → Test by switching eye colours in the Builder's avatar panel. The official validator's
+  mesh checks skip these items; its PNG checks (square, ≤256, alpha) still run. Package with `package_item.py --male
+  x.png --male-extra x_mask.png`.
 
 ## Builder
 - Loading an item-editor URL doesn't change the selected item; the pencil edits whatever is selected. Select by
   clicking in the left list and confirm the item id.
 - Builder warnings are not acceptance; curation enforces the docs.
+- **The bulk zip import doesn't set `hides`, and can mix up body shapes.** New item → Single item fills name, rarity,
+  category, description, tags, both body shapes and the thumbnail from a `package_item.py` zip, but not hides: set
+  Overrides → Base body by hand and read it back. It also stored the male GLB as the female representation on 5 of 7
+  items, and put a facial item's four PNGs in both representations. → After every zip upload, read the item's
+  representations back from the Builder API and hash each stored file against the local ones. For facial features,
+  upload one zip per body shape.
+- **Springs are stored per bone and per body shape.** The spring panel has Male / Female tabs, and a tab you don't
+  fill stays on the defaults (2 / 0 / 0.5); read-backs that only read the active tab missed it for a day. → Fill both
+  tabs, save, reload, and read both back. Set the Center by hovering the bone-tree node and clicking Select. The first
+  spring save after a file swap doesn't stick: save again and read it back after a reload.

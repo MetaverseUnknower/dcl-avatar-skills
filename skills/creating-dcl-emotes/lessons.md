@@ -28,6 +28,10 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   open palm on the hip looked odd. Offset the wrist from the palm away from the body.
 - Hanging wrists at x ±20.5 cm sink into the thighs; ±24.5 (wide stance 27–28) is clear.
 - Fists low and >20 cm forward are out of reach unless the spine leans and the clavicles protract.
+- **A wrist bent oddly on an extended arm.** A held goblet was forced upright while the arm rose, so the wrist bent
+  ~60° sideways; the palm-direction check doesn't catch it. → Measure forearm-vs-hand deviation and extension per
+  frame, and keep the deviation under ~20° by searching the prop's tilt and the hand's roll together, with the tilt
+  bounded so the prop still reads right (a toast leans toward the room, not toward the face).
 - Second hand on a prop held by the first: place it from where the first hand actually ended up, not its IK target.
 - An optimiser "passed" by swinging the hand-foot link over the foot instead of hopping the foot over it. → Constrain
   the intended motion.

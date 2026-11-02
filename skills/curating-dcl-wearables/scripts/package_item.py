@@ -8,6 +8,8 @@ usage:
   python3 package_item.py out.zip --name "Pointy Shoes" --category feet --male shoes_male.glb --female shoes_female.glb \
       --thumbnail thumb.png [--description "..."] [--rarity epic] [--hides hair,hat] [--replaces ...] [--tags a,b]
   python3 package_item.py out.zip --name "Cap" --category hat --unisex cap.glb --thumbnail thumb.png
+  python3 package_item.py out.zip --name "Eyes" --category eyes --male eyes_male.png --male-extra eyes_male_mask.png \
+      --female eyes_female.png --female-extra eyes_female_mask.png --thumbnail thumb.png   (facial features: PNG sets)
 """
 import argparse, json, os, sys, zipfile
 
@@ -31,6 +33,9 @@ def main():
     ap.add_argument('--female')
     ap.add_argument('--unisex', help='one GLB fitted to both body shapes')
     ap.add_argument('--thumbnail', required=True)
+    ap.add_argument('--male-extra', default='', help='more content files of the male representation, e.g. a facial '
+                    'feature\'s _mask.png (comma-separated)')
+    ap.add_argument('--female-extra', default='')
     ap.add_argument('--hides', default='')
     ap.add_argument('--replaces', default='')
     ap.add_argument('--tags', default='')
@@ -43,19 +48,21 @@ def main():
             sys.exit(f'{label} must be <= {limit} characters with no ":" ({len(text)} given)')
 
     files, reps = {}, []
-    def rep(path, shapes):
-        key = os.path.basename(path)
-        if key in files and files[key] != path:
-            sys.exit(f'two different files are both named {key}')
-        files[key] = path
-        reps.append({'bodyShapes': shapes, 'mainFile': key, 'contents': [key],
+    def rep(path, shapes, extra=''):
+        keys = []
+        for pth in [path] + csv(extra):
+            key = os.path.basename(pth)
+            if key in files and files[key] != pth:
+                sys.exit(f'two different files are both named {key}')
+            files[key] = pth; keys.append(key)
+        reps.append({'bodyShapes': shapes, 'mainFile': keys[0], 'contents': keys,
                      'overrideHides': [], 'overrideReplaces': []})
     if a.unisex:
         rep(a.unisex, [MALE, FEMALE])
     if a.male:
-        rep(a.male, [MALE])
+        rep(a.male, [MALE], a.male_extra)
     if a.female:
-        rep(a.female, [FEMALE])
+        rep(a.female, [FEMALE], a.female_extra)
 
     manifest = {'name': a.name, 'description': a.description, 'rarity': a.rarity,
                 'data': {'category': a.category, 'hides': csv(a.hides), 'replaces': csv(a.replaces),

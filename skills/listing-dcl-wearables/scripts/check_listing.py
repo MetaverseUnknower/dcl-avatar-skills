@@ -7,7 +7,8 @@ listing.json:
 {
   "collection": "Techwear Vol 1",
   "items": [
-    {"file": "pants", "name": "Techwear Strap Pants", "category": "lower_body", "rarity": "epic",
+    {"file": "pants", "name": "Techwear Strap Pants", "category": "lower_body", "rarity": "epic",   (emotes: "kind": "emote"
+     and an emote category: dance stunt greetings fun poses reactions horror miscellaneous)
      "description": "Matte black cargo pants rigged with straps that swing",
      "utility": "", "tags": ["techwear", "pants", "black", "straps", "cyberpunk"],
      "hides": [], "price": null, "giveaways": 0, "event_tag": null}
@@ -22,6 +23,7 @@ RARITY = {'unique': 1, 'mythic': 10, 'exotic': 50, 'legendary': 100, 'epic': 100
           'common': 100000}
 CATEGORIES = {'hair', 'eyes', 'eyebrows', 'facial_hair', 'mouth', 'upper_body', 'lower_body', 'feet', 'hands_wear',
               'hat', 'helmet', 'mask', 'tiara', 'top_head', 'earring', 'eyewear', 'skin'}
+EMOTE_CATEGORIES = {'dance', 'stunt', 'greetings', 'fun', 'poses', 'reactions', 'horror', 'miscellaneous'}
 NAME_MAX, DESC_MAX, UTIL_MAX, TAGS_MAX, COLL_MAX, ITEMS_MAX = 32, 64, 64, 20, 32, 50
 # words that suggest a utility claim in a description, or IP that tends to get items rejected
 CLAIMS = re.compile(r'\b(boost|increase|damage|speed|grants?|unlocks?|access|bonus|power-?up|xp)\b', re.I)
@@ -64,7 +66,7 @@ def main():
             add('FAIL', w, f'utility is {len(util)} chars (max {UTIL_MAX})')
         if CLAIMS.search(desc) and not util:
             add('WARN', w, 'description sounds like a utility claim: only claim what the item really does')
-        if it.get('category') not in CATEGORIES:
+        if it.get('category') not in (EMOTE_CATEGORIES if it.get('kind') == 'emote' else CATEGORIES):
             add('FAIL', w, f'category {it.get("category")!r} is not a wearable category')
         rarity = it.get('rarity')
         if rarity not in RARITY:
