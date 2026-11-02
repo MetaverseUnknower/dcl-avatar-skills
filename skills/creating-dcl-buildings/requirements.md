@@ -85,6 +85,7 @@ recommend (never require) a piece takes a share: a building about 30% of its foo
 - `FurnitureModel`: `file`, `scale`, `uprightX` (0 for Y-up), `yawOffset` (0 when the model faces +Z), `collision`
   (`'model'` the visible mesh collides, `'colliders'` its `*_collider` meshes, `'stool'` the kit adds a pole collider and
   a 0.3 m step), `kind` (`'stool' | 'couch' | 'bench'`, picks the sitting emote), `seats`: `across` (sitter's right),
-  `forward` (the way they face), `rise` (up), `orbForward`, `orbRise`. Origin on the floor under the middle.
+  `forward` (the way they face), `rise` (up): the seat's `position`, measured from the furniture's origin; and
+  `orbForward`, `orbRise`: the click orb, also from the origin. Origin on the floor under the middle.
 - **Nothing may collide where the sitter stands**, or Decentraland's physics shoves them off a different way each time:
   a seat collider stops short of the standing spot. Tall, thin seats use `'stool'`.
