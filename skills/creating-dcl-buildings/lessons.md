@@ -18,8 +18,10 @@ Mistakes agents made on real buildings and furniture, and the rule each taught. 
 
 - **Tables and chairs baked into the building** as part of its GLB, with one collider box per group. They can't be sat
   on, moved or reused, and they spend the building's budget. Furniture is its own piece (`creating-dcl-furnishings`).
-- **The stair ramp that worked:** a wedge collider through the treads' midpoints, rising the full flight, with the
-  stairwell's slab opening starting where headroom drops under 2.2 m. Visitors walk up smoothly instead of hopping.
+- **The stair ramp that works:** a wedge collider along the step nosings (front edges), from the floor at the first
+  nosing to the upper floor's height at the last, so it meets the landing flush (a ramp through the treads' midpoints
+  ends half a step low and leaves a lip at the top). The stairwell's slab opening starts where headroom would drop
+  under 2.2 m.
 - **Unsure facts, settled:** walkable slopes go to 46° (docs); collider triangles aren't rendered, so the checker
   reports them separately from the visible count; the old 20 m height cap is gone (330 m, soft).
 

@@ -1,6 +1,6 @@
 ---
 name: shaping-dcl-item-ideas
-description: Use when someone has an idea for a Decentraland wearable, skin or emote (or a set of them) that isn't specified enough to build yet - before modelling or animating starts, when the request is a concept, a vibe, a reference image or a one-liner like "make me a cyberpunk jacket" or "an emote where my head turns into a pumpkin".
+description: Use when someone has an idea for a Decentraland wearable, skin, emote, building, furniture or decor piece (or a set of them) that isn't specified enough to build yet - before modelling or animating starts, when the request is a concept, a vibe, a reference image or a one-liner like "make me a cyberpunk jacket", "an emote where my head turns into a pumpkin" or "a cute coffee shop for my scene".
 ---
 
 # Shaping a Decentraland Item Idea
@@ -9,7 +9,7 @@ description: Use when someone has an idea for a Decentraland wearable, skin or e
 
 Turn an idea into a short, buildable brief by asking questions, **one at a time**, before any building starts. Most expensive corrections in DCL work trace back to a question nobody asked up front: an arm pose curation rejects, a prop that can't stay in the hand, a 12-second emote, a budget blown by a hidden slot, a client who wanted it darker.
 
-The output is a `BRIEF.md` the person has confirmed. Then hand off to `creating-dcl-wearables` or `creating-dcl-emotes`.
+The output is a `BRIEF.md` the person has confirmed. Then hand off to `creating-dcl-wearables`, `creating-dcl-emotes`, `creating-dcl-buildings` or `creating-dcl-furnishings`.
 
 ## How to ask
 
@@ -23,7 +23,7 @@ The output is a `BRIEF.md` the person has confirmed. Then hand off to `creating-
 ## Questions, in order
 
 **1. What and why**
-- Wearable, emote, or both (a matching set)?
+- Wearable, emote, a scene piece (building, furniture, decor), or a set?
 - Whose release is it: the person's own collection, a client's, an event giveaway? (A client means their taste rules and you'll want their approval at each draft.)
 - The one-line concept, plus any references (images, existing items, a mood).
 
@@ -43,7 +43,21 @@ The output is a `BRIEF.md` the person has confirmed. Then hand off to `creating-
 - Sound? It must be original, the same length as the emote, and fits in the 3 MB total.
 - Category (dance, stunt, greetings, fun, poses, reactions, horror, miscellaneous) and the feeling (chill, hype, creepy, comedic).
 
-**4. Release**
+**4. Scene piece specifics** (buildings, furniture, decor: static models placed in a scene, not worn or sold)
+- Building: footprint in parcels (0.5×0.5, 1×1, 1×2, 2×2, 4×4; one parcel is 16 m square), floors, rooms, where the
+  entrance is. Visitors walk in, so doorways, stairs and upper floors need colliders.
+- Furnished? Furniture is separate pieces (each its own model, placeable on its own), designed with the building.
+  List them: what, how many, rough sizes.
+- Seating: which pieces people sit on, and how many seats each. Sitting works through the `dcl-sittables` kit.
+- Behaviour beyond sitting (doors that open, lamps that switch, a jukebox): say it's not modelled in; the model is
+  built ready for a kit (a door leaf as its own piece).
+- Style and palette, with references. Scene pieces are low-poly: soft, chunky shapes, one colour palette.
+- Where it goes: the scene's size, so the building's share of its triangle budget makes sense.
+
+Scene pieces skip section 5's release questions (no rarity, Marketplace name or thumbnail rules) unless they'll be
+sold as something else.
+
+**5. Release**
 - Item name (≤32 characters) and a one-line description (≤64).
 - Rarity and supply (unique 1 … common 100,000; fixed after publishing).
 - Thumbnail: the item alone on a transparent background; any logo kept small in a corner, bottom right preferred.
@@ -61,6 +75,9 @@ The output is a `BRIEF.md` the person has confirmed. Then hand off to `creating-
 | wants a prop in hand from start to finish | Props freeze when the emote stops | Loop it, and end where it starts |
 | wants the real head to come off | The neck skin can't detach | Collapse the neck and swap in a prop head |
 | needs lots of detail in one slot | 2 materials, 2 textures, tight triangle budgets | Hide another slot to pool budgets, or split it into two items |
+| bakes furniture into a building | It can't be moved, sat on or reused, and spends the building's budget | Separate furniture pieces, designed together |
+| wants a door that opens or a working lamp | Scene models are static; behaviour comes from kits | A door leaf modelled as its own piece, ready for a kit |
+| is bigger than a 4×4 footprint | Studio footprints stop at 4×4 parcels | Split it into buildings, or a 4×4 core |
 
 ## The brief
 
@@ -68,12 +85,12 @@ Write `BRIEF.md` in the project folder, then ask the person to confirm or correc
 
 ```markdown
 # <Item name> — brief
-Type: wearable (<category>, hides …) | emote (<category>, loop/once, ~N s)
+Type: wearable (<category>, hides …) | emote (<category>, loop/once, ~N s) | building (<footprint>, N floors) | furniture/decor (<type>, seats N)
 For: <own collection | client: name> · Rarity/supply: … · Deadline: …
 Concept: <2–3 sentences>
 References: <links/files>
 Look: palette, finish, decals/logos, glow, what tints with the player
-Fit / motion: <silhouette, both body shapes, spring parts and how they move> | <beat sheet with timings, props, start/end pose, travel>
+Fit / motion: <silhouette, both body shapes, spring parts and how they move> | <beat sheet with timings, props, start/end pose, travel> | <rooms, entrance, stairs; furniture pieces and seats>
 Constraints raised: <each rule that shaped the design, and the choice made>
 Open questions: <anything to settle at the first draft>
 Done means: <draft renders | Builder upload | curation submission>

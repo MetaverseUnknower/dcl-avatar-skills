@@ -23,7 +23,7 @@ Decentraland's triangle, material and texture limits are **soft** (the Creator H
 4. **Build the colliders as their own boxes**, named `*_collider`, no material:
    - walls: closed boxes (a plane blocks from one side only), the doorway left open
    - every floor and landing a box; railings round stairwells and open edges
-   - **stairs: a ramp collider over the steps** (a wedge through the tread nosings, ≤ 40°), or visitors hop each step
+   - **stairs: a ramp collider over the steps**, a wedge along the step nosings meeting the upper floor flush (≤ 40°), or visitors hop each step
    - keep each piece convex (split L shapes into boxes)
 5. **Write `route.json`**: waypoints from outside, in through the doorway, round every room, up every stair, across every upper floor. Give each waypoint on an upper floor its floor height (`[x, z, y]`).
 6. **Check:**
@@ -35,7 +35,9 @@ Decentraland's triangle, material and texture limits are **soft** (the Creator H
    | With its furniture placed | add `--place chair.glb <x> <z> <yaw>` per piece |
 
    A blocked route names the collider and where: move the route if it hugged a wall, fix the building if a person couldn't pass there either.
-7. **Render** the outside from several angles and the inside at eye height (1.6 m), and show them.
+7. **Render** the outside from several angles and the inside at eye height (1.6 m), and show them. Light interiors
+   flatly (a bright world colour, or Eevee): Decentraland's toon lighting is flat, and a dark Cycles interior reads as
+   a modelling problem that isn't there.
 8. **Hand off:** `building.glb`, `route.json`, any door leaf GLB, triangle and material counts, footprint.
 
 ## Quick reference
