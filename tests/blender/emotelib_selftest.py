@@ -1,7 +1,7 @@
 # Self-test for skills/creating-dcl-emotes/scripts/emotelib.py, run inside Blender on an official avatar .blend:
 #   blender -b AvatarShape_A.blend --python-exit-code 1 --python tests/blender/emotelib_selftest.py -- <outdir> <scripts dir>
 # Prints one "SELFTEST PASS|FAIL <name>" line per check and "SELFTEST RESULT PASS|FAIL" at the end.
-# tests/test_emotelib_blender.py runs it for each body shape when Blender and the avatar files are available.
+# tests/test_helper_libraries_blender.py runs it for each body shape when Blender and the avatar files are available.
 import bpy, math, os, subprocess, sys
 from mathutils import Vector, Matrix
 
