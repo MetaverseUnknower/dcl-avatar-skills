@@ -61,6 +61,12 @@ Open doorways by default. A door leaf, when wanted, is a **separate GLB** with i
 
 ## Pitfalls that recur
 
+- **Blender 4.x removed APIs agents still write** (check `bpy.app.version`; Virvi's worker runs 4.4):
+  `mesh.use_auto_smooth` / `auto_smooth_angle` are gone (4.1): select the object and call
+  `bpy.ops.object.shade_smooth_by_angle(angle=...)`. `material.shadow_method` is gone (4.2): set
+  `material.surface_render_method = 'BLENDED'` (or `'DITHERED'`) for transparency; `blend_method` still exports
+  glass as BLEND. Eevee is `'BLENDER_EEVEE_NEXT'` in 4.2–4.4.
+
 - **Blender's `.001` copies:** `Wall_collider.001` is not a collider; it renders as a grey slab and blocks nothing. The checker FAILs it.
 - **Everything double-sided:** Blender's culling is off by default; export through `bp.export()`.
 - **A material per colour:** twelve materials is twelve draw calls per object. Use the palette.

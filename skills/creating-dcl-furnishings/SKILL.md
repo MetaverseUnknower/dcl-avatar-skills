@@ -52,6 +52,7 @@ Materials ≤ 3 and textures ≤ 2 (recommended); textures power of two, ≤ 102
 
 - **Over budget:** a cosy couch came out at 2,108 triangles with four materials. Bevel once, palette everything.
 - **Double-sided faces:** Blender's default; `bp.export()` fixes it.
+- **3.6-era code on Blender 4.x:** `mesh.use_auto_smooth` is gone; use `bpy.ops.object.shade_smooth_by_angle()` (more in `creating-dcl-buildings`' pitfalls).
 - **A seat collider reaching the front edge:** sitters get shoved off a different way every time.
 - **A stool's own mesh holding the sitter up:** the avatar overlaps it and gets pushed off. Use `collision: 'stool'`.
 - **A `file` path the kit won't find:** write the GLB's name; the scene decides the folder.

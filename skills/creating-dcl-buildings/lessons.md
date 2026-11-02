@@ -25,6 +25,12 @@ Mistakes agents made on real buildings and furniture, and the rule each taught. 
 - **Unsure facts, settled:** walkable slopes go to 46° (docs); collider triangles aren't rendered, so the checker
   reports them separately from the visible count; the old 20 m height cap is gone (330 m, soft).
 
+## Blender versions
+
+- **Scripts written on Blender 3.6 failed on 4.4** (the version Virvi's worker runs): `mesh.use_auto_smooth` (removed
+  in 4.1) and `material.shadow_method` (removed in 4.2). `shade_smooth_by_angle()` and `surface_render_method` replace
+  them, and the rebuilt models came out identical. Write for the Blender you'll run on, and check `bpy.app.version`.
+
 ## Checking
 
 - **A route that hugs a wall** gets blocked by a shelf or rail the building is right to have. A blocked route names the
