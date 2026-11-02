@@ -48,7 +48,15 @@ python3 skills/creating-dcl-buildings/scripts/check_walk.py cafe.glb --route rou
 `skills/creating-dcl-buildings/scripts/blender_palette.py` (run inside Blender) colours a whole model from one swatch
 texture, so a piece needs one material instead of one per colour.
 
+`skills/creating-dcl-emotes/scripts/emotelib.py` (run inside Blender 3.6 or 4.x) is the emote helper library: rig
+posing with two-bone IK that takes an explicit palm direction, finger curls, prop builders that wind every face
+outward, `Armature_Prop` with hand-follow bones, baking, export, and checks for palms, prop normals, the floor and limb
+overlaps.
+
 The checkers' own tests (good and known-bad models) are in `tests/`: `pip install pytest numpy && pytest tests`.
+`tests/test_emotelib_blender.py` also runs `emotelib.py` inside Blender on both body shapes when Blender is found
+(`BLENDER`, `blender` on PATH, or the macOS app) and `DCL_AVATAR_DIR` points at the official `AvatarShape_A.blend` and
+`AvatarShape_B.blend`.
 
 Curator scripts (`skills/curating-dcl-wearables/scripts/`), each usable on its own:
 
