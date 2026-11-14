@@ -20,6 +20,25 @@ BONES = {f'Avatar_{b}' for b in ('Hips', 'Spine', 'Spine1', 'Spine2', 'Neck', 'H
 BONES |= {f'Avatar_{s}{b}' for s in SIDES for b in ('Shoulder', 'Arm', 'ForeArm', 'Hand', 'UpLeg', 'Leg', 'Foot', 'ToeBase')}
 BONES |= {f'Avatar_{s}Hand{f}{i}' for s in SIDES for f in ('Thumb', 'Index', 'Middle', 'Ring', 'Pinky') for i in range(1, 5)}
 assert len(BONES) == 62
+# The base avatar's joint order (catalyst BaseMale.glb). The in-world explorer skins by joint INDEX: joints 0-61 must be
+# these bones in this order, spring bones after (unity-explorer ComputeSkinningBufferContainer / BuildSpringBoneData).
+CANON_ORDER = [
+    'Avatar_Hips', 'Avatar_LeftUpLeg', 'Avatar_LeftLeg', 'Avatar_LeftFoot', 'Avatar_LeftToeBase',
+    'Avatar_RightUpLeg', 'Avatar_RightLeg', 'Avatar_RightFoot', 'Avatar_RightToeBase', 'Avatar_Spine',
+    'Avatar_Spine1', 'Avatar_Spine2', 'Avatar_LeftShoulder', 'Avatar_LeftArm', 'Avatar_LeftForeArm',
+    'Avatar_LeftHand', 'Avatar_LeftHandThumb1', 'Avatar_LeftHandThumb2', 'Avatar_LeftHandThumb3',
+    'Avatar_LeftHandThumb4', 'Avatar_LeftHandIndex1', 'Avatar_LeftHandIndex2', 'Avatar_LeftHandIndex3',
+    'Avatar_LeftHandIndex4', 'Avatar_LeftHandMiddle1', 'Avatar_LeftHandMiddle2', 'Avatar_LeftHandMiddle3',
+    'Avatar_LeftHandMiddle4', 'Avatar_LeftHandRing1', 'Avatar_LeftHandRing2', 'Avatar_LeftHandRing3',
+    'Avatar_LeftHandRing4', 'Avatar_LeftHandPinky1', 'Avatar_LeftHandPinky2', 'Avatar_LeftHandPinky3',
+    'Avatar_LeftHandPinky4', 'Avatar_RightShoulder', 'Avatar_RightArm', 'Avatar_RightForeArm', 'Avatar_RightHand',
+    'Avatar_RightHandThumb1', 'Avatar_RightHandThumb2', 'Avatar_RightHandThumb3', 'Avatar_RightHandThumb4',
+    'Avatar_RightHandIndex1', 'Avatar_RightHandIndex2', 'Avatar_RightHandIndex3', 'Avatar_RightHandIndex4',
+    'Avatar_RightHandMiddle1', 'Avatar_RightHandMiddle2', 'Avatar_RightHandMiddle3', 'Avatar_RightHandMiddle4',
+    'Avatar_RightHandRing1', 'Avatar_RightHandRing2', 'Avatar_RightHandRing3', 'Avatar_RightHandRing4',
+    'Avatar_RightHandPinky1', 'Avatar_RightHandPinky2', 'Avatar_RightHandPinky3', 'Avatar_RightHandPinky4',
+    'Avatar_Neck', 'Avatar_Head',
+]
 FINGER = re.compile(r'Hand(Thumb|Index|Middle|Ring|Pinky)\d$')
 FORBIDDEN = ('_mouth', '_eyebrows', '_eyes')
 COMP = {5121: np.uint8, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
@@ -156,6 +175,11 @@ def check(path, category, hides, strict):
     all_bones = {name(i) for i in range(len(nodes)) if name(i).startswith('Avatar_') or is_spring(name(i))} | joints
     unknown = sorted(j for j in joints if j not in BONES and not is_spring(j))
     add('FAIL' if unknown else 'PASS', 'joints are Avatar_* or *springbone*', unknown or 'yes')
+    for s_ in g.get('skins', []):
+        order = [name(j) for j in s_['joints']]
+        bad = [f'{i}:{a}' for i, (a, b) in enumerate(zip(order, CANON_ORDER)) if a != b]
+        add('FAIL' if bad else 'PASS', 'joints 0-61 in the base avatar order, extras after', bad[:3] or 'yes',
+            'in-world skinning is by index: else bones after the first misplaced one bind wrong (torn limbs)')
     leaf = sorted(n for n in all_bones if (n.endswith('_end') or n.endswith('_neutral')) and not is_spring(n))
     add('WARN' if leaf else 'PASS', 'no _end/_neutral leaf bones', leaf or 'none')
     missing = sorted(BONES - {name(i) for i in range(len(nodes))})

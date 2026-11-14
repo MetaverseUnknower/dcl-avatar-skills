@@ -231,5 +231,94 @@ def export_wearable(objs, out_dir, name):
                 export_def_bones=False, export_image_format='AUTO')
     known = {p.identifier for p in bpy.ops.export_scene.gltf.get_rna_type().properties}
     bpy.ops.export_scene.gltf(**{k: v for k, v in opts.items() if k in known})
-    print('EXPORTED', path, os.path.getsize(path), 'bytes')
+    moved = order_joints(path)
+    print('EXPORTED', path, os.path.getsize(path), 'bytes' + (f', {moved} joints moved behind the avatar bones' if moved else ''))
     return path
+
+
+# ---------------------------------------------------------------- joint order
+# The in-world explorer skins wearables on the GPU by joint INDEX: joints 0-61 are taken as the base avatar's bones in
+# the order below, and only joints from 62 on are spring bones (unity-explorer ComputeSkinningBufferContainer,
+# AttachmentAssetUtility.BuildSpringBoneData). Blender lists each spring bone right after its parent, which shifts every
+# avatar bone after it: in-world those limbs bind to the wrong bones and tear (typically the right arm or leg). The
+# Builder's preview remaps by name, so it looks fine there. export_wearable() reorders every GLB it writes.
+AVATAR_JOINT_ORDER = [
+    'Avatar_Hips', 'Avatar_LeftUpLeg', 'Avatar_LeftLeg', 'Avatar_LeftFoot', 'Avatar_LeftToeBase',
+    'Avatar_RightUpLeg', 'Avatar_RightLeg', 'Avatar_RightFoot', 'Avatar_RightToeBase', 'Avatar_Spine',
+    'Avatar_Spine1', 'Avatar_Spine2', 'Avatar_LeftShoulder', 'Avatar_LeftArm', 'Avatar_LeftForeArm',
+    'Avatar_LeftHand', 'Avatar_LeftHandThumb1', 'Avatar_LeftHandThumb2', 'Avatar_LeftHandThumb3',
+    'Avatar_LeftHandThumb4', 'Avatar_LeftHandIndex1', 'Avatar_LeftHandIndex2', 'Avatar_LeftHandIndex3',
+    'Avatar_LeftHandIndex4', 'Avatar_LeftHandMiddle1', 'Avatar_LeftHandMiddle2', 'Avatar_LeftHandMiddle3',
+    'Avatar_LeftHandMiddle4', 'Avatar_LeftHandRing1', 'Avatar_LeftHandRing2', 'Avatar_LeftHandRing3',
+    'Avatar_LeftHandRing4', 'Avatar_LeftHandPinky1', 'Avatar_LeftHandPinky2', 'Avatar_LeftHandPinky3',
+    'Avatar_LeftHandPinky4', 'Avatar_RightShoulder', 'Avatar_RightArm', 'Avatar_RightForeArm', 'Avatar_RightHand',
+    'Avatar_RightHandThumb1', 'Avatar_RightHandThumb2', 'Avatar_RightHandThumb3', 'Avatar_RightHandThumb4',
+    'Avatar_RightHandIndex1', 'Avatar_RightHandIndex2', 'Avatar_RightHandIndex3', 'Avatar_RightHandIndex4',
+    'Avatar_RightHandMiddle1', 'Avatar_RightHandMiddle2', 'Avatar_RightHandMiddle3', 'Avatar_RightHandMiddle4',
+    'Avatar_RightHandRing1', 'Avatar_RightHandRing2', 'Avatar_RightHandRing3', 'Avatar_RightHandRing4',
+    'Avatar_RightHandPinky1', 'Avatar_RightHandPinky2', 'Avatar_RightHandPinky3', 'Avatar_RightHandPinky4',
+    'Avatar_Neck', 'Avatar_Head',
+]
+
+
+def order_joints(path):
+    """Rewrite the GLB at path so each skin lists the 62 avatar bones first, in AVATAR_JOINT_ORDER, then the extra
+    (spring) bones in their exported order (parents before children). JOINTS_* and inverseBindMatrices are remapped in
+    place, so every vertex keeps the same bones and weights. Returns how many joints moved (0: file untouched)."""
+    import json, struct
+    import numpy as np
+    comp = {5121: (np.uint8, 1), 5123: (np.uint16, 2), 5125: (np.uint32, 4), 5126: (np.float32, 4)}
+    ncomp = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}
+    data = open(path, 'rb').read()
+    jl = struct.unpack('<I', data[12:16])[0]
+    g = json.loads(data[20:20 + jl])
+    bl = struct.unpack('<I', data[20 + jl:24 + jl])[0]
+    binary = bytearray(data[28 + jl:28 + jl + bl])
+
+    def view(acc_i):
+        a = g['accessors'][acc_i]; bv = g['bufferViews'][a['bufferView']]
+        dt, size = comp[a['componentType']]; n = ncomp[a['type']]
+        start = bv.get('byteOffset', 0) + a.get('byteOffset', 0)
+        stride = bv.get('byteStride', size * n)
+        rows = np.stack([np.frombuffer(binary, dt, n, start + r * stride) for r in range(a['count'])])
+
+        def put(arr):
+            arr = arr.astype(dt)
+            for r in range(a['count']):
+                binary[start + r * stride:start + r * stride + size * n] = arr[r].tobytes()
+        return rows, put
+
+    moved = 0
+    for si, skin in enumerate(g.get('skins', [])):
+        names = [g['nodes'][j].get('name', '') for j in skin['joints']]
+        missing = [b for b in AVATAR_JOINT_ORDER if b not in names]
+        if missing:
+            raise ValueError(f'{path}: skin {si} lacks avatar bones {missing[:4]}')
+        new_old = [names.index(b) for b in AVATAR_JOINT_ORDER] + [i for i, n in enumerate(names) if n not in AVATAR_JOINT_ORDER]
+        if new_old == list(range(len(names))):
+            continue
+        old_new = {o: k for k, o in enumerate(new_old)}
+        moved += sum(1 for k, o in enumerate(new_old) if k != o)
+        skin['joints'] = [skin['joints'][o] for o in new_old]
+        if 'inverseBindMatrices' in skin:
+            rows, put = view(skin['inverseBindMatrices'])
+            put(rows[new_old])
+        lut = np.array([old_new[o] for o in range(len(names))])
+        done = set()
+        for node in g['nodes']:
+            if node.get('skin') == si and 'mesh' in node:
+                for prim in g['meshes'][node['mesh']]['primitives']:
+                    for key, acc in prim['attributes'].items():
+                        if key.startswith('JOINTS_') and acc not in done:
+                            done.add(acc)
+                            rows, put = view(acc)
+                            put(lut[rows.astype(int)])
+    if moved:
+        js = json.dumps(g, separators=(',', ':')).encode()
+        js += b' ' * (-len(js) % 4)
+        binary = bytes(binary) + b'\0' * (-len(binary) % 4)
+        with open(path, 'wb') as f:
+            f.write(struct.pack('<4sII', b'glTF', 2, 12 + 8 + len(js) + 8 + len(binary)))
+            f.write(struct.pack('<I4s', len(js), b'JSON')); f.write(js)
+            f.write(struct.pack('<I4s', len(binary), b'BIN\0')); f.write(binary)
+    return moved
