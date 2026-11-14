@@ -95,9 +95,25 @@ ok, proc = run_checker(glb, 'hair')
 check('spring-chain hair passes check_wearable.py --category hair', ok, proc.stdout[-400:] if not ok else '')
 check('checker sees the spring chain', 'chains have an end bone' in proc.stdout and 'end bones unweighted' in proc.stdout)
 
+# ---- a strap on a chain under the LEFT thigh: Blender lists its bones before the right leg's, and the in-world
+# explorer binds joints by index, so export_wearable must move them behind the 62 avatar bones (else the right leg tears)
+bpy.data.objects.remove(tuft, do_unlink=True)
+lb = arm_space_verts(base('lBody'))
+thigh = max((v for v in lb if v.x > 4 and 70 < v.y < 76), key=lambda v: v.x)
+spath = [thigh + Vector((1.0, -4.0 * k, 0)) for k in range(4)]
+sbones = add_spring_chain('Strap_springbone', spath, parent='Avatar_LeftUpLeg')
+sv, sf = ring_tube(spath, 1.0)
+strap = new_mesh_obj('SelfTest_Strap', sv, sf, uvs=[(.5, .5)] * len(sv),
+                     weights=chain_weights(spath, [(.2, 'Avatar_LeftUpLeg'), (.5, sbones[0]), (.85, sbones[1])]),
+                     mats=[bpy.data.materials.new('SelfTest_Webbing')])
+reset_pose()
+glb3 = export_wearable([strap], OUT, 'SelfTestStrap')
+ok3, proc3 = run_checker(glb3, 'lower_body')
+check('left-thigh spring strap exports with the avatar bones first', 'joints 0-61 in the base avatar order' in proc3.stdout
+      and 'FAIL  joints 0-61' not in proc3.stdout, proc3.stdout[-400:] if not ok3 else '')
+bpy.data.objects.remove(strap, do_unlink=True)
+
 # ---- rigid back pendant filed as an earring (a carried prop becomes its own accessory)
-for o in (tuft,):
-    bpy.data.objects.remove(o, do_unlink=True)
 av = armature()
 bpy.context.view_layer.objects.active = av
 bpy.ops.object.mode_set(mode='EDIT')

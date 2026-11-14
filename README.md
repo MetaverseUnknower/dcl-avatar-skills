@@ -55,7 +55,8 @@ overlaps.
 
 `skills/creating-dcl-wearables/scripts/wearlib.py` (run inside Blender 3.6 or 4.x) is the wearable helper library: base
 meshes and BVH projection in armature space, skinned mesh creation, rigid and barycentric copied weights, spring-bone
-chains with blended weights, and rest-pose export per body shape.
+chains with blended weights, and rest-pose export per body shape (spring bones moved behind the 62 avatar bones,
+which the in-world explorer needs because it skins by joint index).
 
 The checkers' own tests (good and known-bad models) are in `tests/`: `pip install pytest numpy && pytest tests`.
 `tests/test_helper_libraries_blender.py` also runs `emotelib.py` and `wearlib.py` inside Blender on both body shapes when Blender is found

@@ -40,6 +40,12 @@ hands_wear hiding hands stays 1K in B.
 - 62 `Avatar_*` bones: Hips, Spine, Spine1, Spine2, Neck, Head; L/R Shoulder, Arm, ForeArm, Hand;
   `Avatar_{Left|Right}Hand{Thumb|Index|Middle|Ring|Pinky}{1-4}`; L/R UpLeg, Leg, Foot, ToeBase.
 - ≤4 influences per vertex; no unrigged vertices.
+- Joint order (UE `ComputeSkinningBufferContainer.CopyAllBuffers`, `AttachmentAssetUtility.BuildSpringBoneData`): the
+  explorer skins on the GPU by joint index. Joints 0–61 are taken as the base avatar's bones in `BaseMale.glb`'s order
+  (Hips, legs L then R, Spine…Spine2, left arm and hand, Neck, Head, right arm and hand); spring bones only from 62 on,
+  each wearable's offset after the previous one's. Blender exports a spring bone right after its parent, which
+  shifts every later avatar bone: those limbs bind wrong in-world. The Builder's preview remaps by name, so it can't
+  show this. Not in the docs; `check_wearable.py` checks it and `wearlib.export_wearable` fixes it.
 - Seams 100% on one bone: neck → Neck; upper/lower body → Hips; lower body/feet → Left/Right Leg; hands → Left/Right ForeArm.
 - Don't move base-body seam vertices; keep caps. Preserve avatar UVs on exposed skin (rejection reason).
 

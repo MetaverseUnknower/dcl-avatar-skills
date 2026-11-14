@@ -75,9 +75,10 @@ Some teams keep a private library of items that passed curation, with the script
 - **Clip gating:** the bare avatar self-intersects in some Run frames (don't gate Run). Gate on overlaps outside rest-pose seams, not raw counts.
 - **Spring Center:** `Avatar_Hips` when the chain must swing with the body (leg straps, held flags); none when trailing at speed is the look (coat tails). Dangles on the outer side or back, ending above the knee. Re-enter params after every re-upload.
 - **Fingers:** the checker warns when non-hand items weight finger bones; previews must pose fingers from real clips or a broken fist stays invisible.
-- **Rigid plates over skinned fabric:** the fabric under each plate follows that plate's bone.
+- **Rigid plates over skinned fabric:** weight each plate like the fabric under it (its own bone and the joints either side, one blend per plate along the bone) and keep plates clear of the joints. Fix this in weights, never by re-cutting the fabric (`lessons.md`, Weights and rig).
+- **Spring bones and joint order:** in-world skinning is by joint index, so the 62 avatar bones must come first. `export_wearable` reorders; if you export another way, run `wearlib.order_joints(path)` and let `check_wearable.py` confirm.
 - **Texturing low-poly base meshes:** bake per texel from 3D position; never fit flat art per vertex. Draw text in real cm.
-- **Looks:** toon shader, flat light, no bloom, so in-world reads darker than Blender. Only base color, emission and alpha are used; MASK over BLEND. Only the base color of `hair`/`skin`-named materials tints.
+- **Looks:** toon shader, flat light, no bloom, so in-world reads darker than Blender; a near-black albedo stays black, so items that must match share the same emission wiring. Judge tone in the hosted preview (`preview_wearable.py`), not Blender. Only base color, emission and alpha are used; MASK over BLEND. Only the base color of `hair`/`skin`-named materials tints.
 - **lower_body hides the real legs:** see-through rips need base-leg patches in `AvatarSkin_MAT` behind them.
 
 ## Working rules

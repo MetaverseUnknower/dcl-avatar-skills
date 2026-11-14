@@ -19,7 +19,18 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   from the real unity-explorer `Idle.anim`.
 - **Fingers never posed in previews**, so a fist over a knife went "all spiky" in-world. → Previews use real clips;
   assert the exported GLB has no item vertices on finger bones unless intended.
-- **In-world darker than Blender** (a creature skin read near-black). → Lighter albedo; don't rely on glow/bloom.
+- **In-world darker than Blender** (a creature skin read near-black). → Lighter albedo; don't rely on bloom. A
+  near-black albedo stays black in the toon shader however much you raise it: a jacket lifted 1.45x went from RGB
+  (0, 3, 7) to (1, 5, 9) while the pants beside it read (47, 48, 56). Those pants got their grey from their texture
+  also driving emission. → Give pieces that must match the same wiring (texture on emission, the non-accent texels
+  dimmed), then tune the albedo.
+- **Judge tone in Decentraland's renderer, not Blender.** Blender's lights showed the jacket lighter than the pants;
+  the hosted preview showed it black against grey. → Render both items with `preview_wearable.py` under the same
+  lighting and compare pixel medians from the same regions before and after.
+- **Aggregate overlap numbers misled three glove fixes in a row.** Armour seated in fabric registers fresh 0.5 cm
+  contacts whenever it slides, so a better glove scored about the same, and a worse one (mangled fingertips) scored
+  better. → For hands and armour, render close-ups of the failing pose before and after every change, colour each
+  plate by its bone to see which pieces form an artefact, and show the person before uploading.
 - **Stale preview.** The person reviewing saw an old render and no change. → Re-render after every change; restart a
   local scene preview after a GLB rebuild.
 
@@ -33,8 +44,25 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   mask's base down to the neck/shoulder join, not flared.
 - Trousers clear of the shirt at rest still meet its hem in the Jog lean. → Count the upper body's bottom 2 cm as
   seam; waistband ~0.45 cm.
-- Rigid glove plates over blended fabric clipped when fingers curl. → Fabric under each plate follows that plate's
-  bone; test Idle/Walk/Jog/Run and built-in emotes.
+- **Rigid glove plates over blended fabric clipped when fingers curl**, and riding the fabric under each plate onto
+  the plate's bone (plus pulling it in) still left fabric through the plates in idle and fists. → Weight each plate
+  like the fabric directly under it: read only fabric faces of the plate's own bone and the joints either side (side
+  edges otherwise took the neighbouring finger's weights and dragged across), by a ray straight down, interpolated over
+  the face. Treat each plate as one piece: average its back half and front half and blend between them along the bone
+  (corner-by-corner weights folded plate ends into V notches). Keep plates clear of the joints (start ~25 % past one,
+  end ~25 % before the next; the first plate ~35 % past the knuckle strip): a bent joint's fabric bulges at the sides.
+  Never fix this by changing the fabric: re-decimating with joints protected left pointed fingertips, and a settle
+  pass that pulled fabric toward the bone wherever it showed through made cones.
+- **Decimating a base hand can merge its joint loops.** The collapse left faces up to 8 cm long spanning whole fingers
+  (knuckle to tip), which can't bend. → After decimating, list faces whose vertices' dominant bones aren't parent and
+  child; the base hand itself has a few (finger webbing). Keep the original decimation if a later fix only needs
+  weights.
+- **Spring-bone wearables must list the 62 avatar bones first.** The in-world explorer skins by joint index: joints
+  0–61 are taken as the base avatar's bones in its order, and only joints from 62 on are spring bones. Blender lists
+  each spring bone right after its parent, so every avatar bone after it shifted, and curation saw the right leg of
+  strap pants and the right arm of a jacket and gloves torn in-world only (the Builder preview remaps by name).
+  → `export_wearable` reorders every GLB (`wearlib.order_joints`), and `check_wearable.py` fails a misplaced joint.
+  Hair chains under the head happened to export in order, which is why it went unnoticed.
 - Selecting faces by bone weight cut a square notch into the male chest. → Select by position; check both bodies.
 - Deforming the base foot into a shoe pinches the toes into claws. → Loft shoes from measured sections.
 - Rigid hand props can't pass the sitting/KO/hands-together emotes. → Report which emotes fail; don't claim none.
@@ -80,6 +108,28 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   grows, run an all-pairs overlap check of every worn mesh, springs included, at rest and through Idle/Walk/Jog. Fix
   per body shape (the clear spot differs between the round and flat seat), and re-run motion: a shortened chain needs
   more stiffness or it flails in Run.
+- **Skin-tight layers over bare skin** (socks, leggings): other lower_body items bring their own leg skin, the same
+  surface as the base leg. A layer 0.06–0.25 cm off it showed skin through in the Builder. → Keep at least ~0.3 cm
+  wherever it can be seen bare, and end the layer below where your own pants hug the leg rather than thinning it there.
+- **Rings and bands sized at their corners cut the surface between them.** A glove cuff built as a 10-sided ring from
+  radii cast at each corner (then smoothed, which lowered the peaks) sank into the forearm between corners, and thigh
+  straps sized only at their columns let the thigh bulge through each segment. → Give each side the furthest hit across
+  its whole span, divided by cos(half the side's angle); smooth outward only. Where side rays can reach another limb
+  (inner thigh), cap the push (0.35 cm worked).
+- **Fit against the collection's other pieces, not just the body.** The jacket sleeve ran 5 cm into the glove cuff's
+  reach and the two crossed. → Load the companion item's mesh into the clearance surface while building (the cuff then
+  goes over the sleeve like a gauntlet), and build a mask against the beard's drawn surface so it clears it.
+- **Inside or outside: use ray parity, not the nearest face's normal.** On the low-poly nose the nearest face's normal
+  points sideways, so points 2 cm in front of the nose read as inside the skin and a fitting pass pushed the shell out
+  into a block. → Count crossings along a ray (odd = inside). An open sheet copied from body faces (a beard) can get
+  inward normals from a recalculation: orient its normal by the direction away from the skin.
+- **A curled toe needs the sole to wrap up with it.** Curling only the underside (toe spring) thinned the sole to
+  nothing at the tip, pushed the light strip to the bottom and left no tread. → Raise the sole's top with the curl
+  (about half of it), paint the glow strip from the same height function as its geometry (painted at a fixed height
+  they parted into fragments), and let the toe cap's edge follow the sole along the toe.
+- **Parts seated on the jaw follow the jaw's skin.** Pods rigid on Avatar_Head sat 1.5 mm into the skin by design but
+  clipped 3 mm in Walk, because the jaw hinge's skin is partly Avatar_Neck. → Give seated parts the skin weights at
+  their site, and blend their straps from rigid to those weights along their length.
 
 ## Weights and rig
 - A loop that edited weights while iterating them silently dropped most edits. → Read all, then write; re-check the GLB.
@@ -152,6 +202,10 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   x.png --male-extra x_mask.png`.
 
 ## Builder
+- **A collection under review takes re-uploads.** Replacing an item's files through Representations → Edit / Add needed
+  no signature and showed no resubmit or push button; the items stayed Under review. Each file swap resets that item's
+  springs. → Re-enter springs on both tabs, hash the stored files against the local ones, and tell the curators in the
+  collection's forum thread what changed.
 - Loading an item-editor URL doesn't change the selected item; the pencil edits whatever is selected. Select by
   clicking in the left list and confirm the item id.
 - Builder warnings are not acceptance; curation enforces the docs.

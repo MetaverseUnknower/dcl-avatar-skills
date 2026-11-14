@@ -36,6 +36,8 @@ python3 <skill-dir>/scripts/package_item.py item.zip --name "…" --description 
 npx -y @dcl-regenesislabs/wearable-validator validate item.zip        # Node >= 22.19
 ```
 
+`check_wearable.py`'s joint-order line matters most for items with spring bones: a FAIL there means limbs tear in-world (by index skinning) while the Builder preview looks fine, so no later gate can catch it. Fix it before going on.
+
 This is Decentraland's own curation rule book as code (DAO-mandated). A bare GLB gives only a partial verdict and can't see hides; the zip (`wearable.json` + GLBs + `thumbnail.png`, the Builder's bulk format) gives a full one. Its visual checks (`--groups rendering`) need its Linux render server and model credentials; skip them locally and do gates 4 and 6 instead.
 
 ### 2. Thumbnail
@@ -88,7 +90,7 @@ Drive it in the user's browser with whatever browser automation you have; the us
 7. Preview: switch the body shape, play idle, walk, run and a few emotes (dance, wave, fist-pump), and try different skin and hair colours. Hides apply live.
 8. Price is the user's decision: ask, then set it (or **Make it free**) and check that the collection page shows the item as **Ready to submit**.
 
-Gotchas: loading an item-editor URL doesn't change the selected item; click it in the left list and confirm the id. Re-uploading a GLB resets the spring-bone settings: enter them again. Replacing a GLB through the item page's **Representations → Edit** defaults to **Both** and drops the other body shape even if you pick one: re-add it (**Add**), re-set the thumbnail (the GLB upload swaps in the Builder's own render; the custom one comes back re-encoded at 1024 px), re-enter springs on both tabs, then reload and read every field back. This Builder has no price field before publishing; prices are set after approval (a wallet transaction).
+Gotchas: loading an item-editor URL doesn't change the selected item; click it in the left list and confirm the id. Re-uploading a GLB resets the spring-bone settings: enter them again. Replacing a GLB through the item page's **Representations → Edit** defaults to **Both** and drops the other body shape even if you pick one: re-add it (**Add**), re-set the thumbnail (the GLB upload swaps in the Builder's own render; the custom one comes back re-encoded at 1024 px), re-enter springs on both tabs, then reload and read every field back. This Builder has no price field before publishing; prices are set after approval (a wallet transaction). The spring panel's Center picker shows a Select button on each bone only while hovered; automation has to hover the row first or click the button through the page. A collection already **Under review** accepts re-uploaded files without a signature or resubmit step: re-enter springs, hash the stored files, and tell the curators in the forum thread what changed.
 
 ### 6. In-world, before publishing
 
