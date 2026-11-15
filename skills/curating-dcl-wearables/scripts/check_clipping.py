@@ -571,15 +571,70 @@ for label, (pairs, sa, sb) in rest.items():
         report['rest'][label] = {'pairs': len(pairs), 'depth_cm': round(d, 2), 'near': where(label, pairs, sa),
                                  'pieces': pieces(label, pairs, sa, sb) if is_item else []}
 
+# ---- where the bare avatar overlaps itself: the animation's doing, not the item's ----
+# Every base-body part, hidden or not, against every other and itself (faces sharing no corner), outside the rest-pose
+# overlaps. An item hit whose polygons mostly hug the body at rest and lie within BODY_NEAR of such an overlap is
+# blamed on the animation (an arm folding into the torso, a hand into the thigh) and reported, not gated.
+BODY_NEAR = float(os.environ.get('CLIP_BODY_NEAR', '0.05'))      # metres
+BODY_CORNERS = {k: [frozenset(w[v] for v in p.vertices) for p in o.data.polygons] for k, o in body.items()
+                for w in [welded(o)]}
+ITEM_PIECES, BARE_BODY = ' (item pieces: judge)', ' (bare body overlaps here too)'
+
+
+def body_overlaps():
+    snaps = {k: Snap(o) for k, o in body.items()}
+    ks, out = sorted(body), {}
+    for i, k in enumerate(ks):
+        cor = BODY_CORNERS[k]
+        out[(k, k)] = {(a, b) for a, b in snaps[k].tree.overlap(snaps[k].tree) if a < b and not cor[a] & cor[b]}
+        for k2 in ks[i + 1:]:
+            out[(k, k2)] = set(snaps[k].tree.overlap(snaps[k2].tree))
+    return out, snaps
+
+
+reset()
+BODY_SEAM = {key: (grow(body[key[0]], {a for a, b in pairs}), grow(body[key[1]], {b for a, b in pairs}))
+             for key, pairs in body_overlaps()[0].items()}
+# Only polygons that hug the body at rest go wherever the skin goes; a chain or a bulky garment hanging off it doesn't,
+# so its hits stay the item's even where the bare body overlaps itself.
+BODY_HUG = float(os.environ.get('CLIP_BODY_HUG', '0.02'))        # metres from the skin at rest
+_rest_body = [Snap(o).tree for o in body.values()]
+
+
+def skin_gap(c):
+    return min((d for t in _rest_body for (_, _, _, d) in [t.find_nearest(c)] if d is not None), default=1e9)
+
+
+HUG = {o.name: {i for i, c in enumerate(Snap(o).centres) if skin_gap(c) <= BODY_HUG} for o in items}
+
+
+def bare_body_overlaps():
+    """KD-tree of the polygon centres where the posed bare avatar overlaps itself beyond its rest pose, or None."""
+    from mathutils.kdtree import KDTree
+    ov, snaps = body_overlaps()
+    pts = []
+    for (k1, k2), pairs in ov.items():
+        sa_, sb_ = BODY_SEAM[(k1, k2)]
+        for a, b in pairs:
+            if a not in sa_ or b not in sb_:
+                pts += [snaps[k1].centres[a], snaps[k2].centres[b]]
+    if not pts:
+        return None
+    kd = KDTree(len(pts))
+    for j, p in enumerate(pts):
+        kd.insert(p, j)
+    kd.balance()
+    return kd
+
+
 # ---- every frame of every clip ----
 failed = []
-hands, lbody = body.get('hands'), body.get('lbody')   # hidden or not: is Decentraland's own bare hand in its thigh?
 for name, frames in clips:
     bad, grazes, worst = [], 0, 0.0
     for i, (local, hips_loc) in enumerate(frames):
         apply_pose(local, hips_loc)
         m = measure(at_rest=False)
-        bare_hand_thigh = None
+        bare = False                                     # computed once per frame, when a hit needs it
         hits = {}
         for label, (pairs, sa, sb) in m.items():
             seam_a, seam_b = SEAM[label]
@@ -590,9 +645,15 @@ for name, frames in clips:
             if d * 100 <= A.depth:
                 grazes += 1
                 continue
-            if bare_hand_thigh is None:
-                bare_hand_thigh = bool(hands and lbody and Snap(hands).tree.overlap(Snap(lbody).tree))
-            tag = ' (bare hand already in thigh)' if bare_hand_thigh and ('hands' in label or 'lbody' in label) else ''
+            other = label.split(' x ')[1]
+            if other == 'itself' or other in ITEM:
+                tag = ITEM_PIECES
+            else:
+                if bare is False:
+                    bare = bare_body_overlaps()
+                hug = HUG[label.split(' x ')[0]]
+                near = sum(1 for a, b in new_pairs if bare and a in hug and bare.find(sa.centres[a])[2] <= BODY_NEAR)
+                tag = BARE_BODY if near * 2 >= len(new_pairs) and near else ''
             hits[label + tag] = (len(new_pairs), d * 100, where(label, new_pairs, sa))
             if os.environ.get('CLIP_DUMP') and not bad:    # CLIP_DUMP=1: the clipping polygons of a clip's first bad frame
                 oa, ob = bpy.data.objects[label.split(' x ')[0]], visible.get(label.split(' x ')[1].split(' (')[0])
@@ -604,7 +665,7 @@ for name, frames in clips:
             worst = max(worst, d * 100)
         if hits:
             bad.append((i, hits))
-    real = [b for b in bad if any('bare hand' not in k for k in b[1])]
+    real = [b for b in bad if any(not k.endswith((ITEM_PIECES, BARE_BODY)) for k in b[1])]
     must = name in gate
     status = ('FAIL' if real else 'PASS') if must else ('REPORT' if bad else 'PASS')
     if must and real:

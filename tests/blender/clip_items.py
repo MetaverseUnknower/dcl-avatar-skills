@@ -6,6 +6,10 @@ Writes, in <out_dir>:
   skinned.glb    a box skinned to Avatar_Head, 25 cm above the head
   bodycopy.glb   a full copy of the avatar's lBody named M_lBody_BaseMesh, skinned like the original (AvatarSkin_MAT)
   garment.glb    a cloth strip through the chest (material 'pants') named M_uBody_BaseMesh
+  pieces.glb     one mesh, two loose boxes in front of the chin, one on the head, one on the chest, 0.5 cm apart
+  shirt.glb      the base uBody pushed out 3 mm, cloth material, body weights: it goes in wherever the bare arm does
+  underarm.glb   a box on the chest 4 cm off the torso side under the left arm: the arm swings onto it in Walk
+  kneebox.glb    a box on the hips 2 cm in front of the left knee: the leg swings into it in Walk
 """
 import os
 import sys
@@ -87,4 +91,63 @@ export_wearable([strip], out_dir, 'garment')
 for fn in os.listdir(out_dir):
     if fn.startswith('garment_'):
         rename(fn, 'garment.glb')
+bpy.data.objects.remove(strip, do_unlink=True)
+
+
+def export_as(objs, name):
+    export_wearable(objs, out_dir, name)
+    for fn in os.listdir(out_dir):
+        if fn.startswith(name + '_'):
+            rename(fn, name + '.glb')
+    for o in objs:
+        bpy.data.objects.remove(o, do_unlink=True)
+
+
+# pieces: one mesh, two loose boxes 12 cm in front of the chin, the upper on the head, the lower on the chest, 0.5 cm
+# apart: they meet when the head moves against the chest, without touching the body
+chin = min((base('Head').matrix_world @ p.co).z for p in base('Head').data.vertices
+           if (base('Head').matrix_world @ p.co).y < -0.05)
+front = min((base('Head').matrix_world @ p.co).y for p in base('Head').data.vertices) - 0.12
+up_c, lo_c = (0, front, chin + 0.025), (0, front, chin - 0.025 - 0.005)
+verts, faces = [], []
+for c in (up_c, lo_c):
+    v, f = cube(c, 0.02)
+    faces += [tuple(i + len(verts) for i in q) for q in f]
+    verts += v
+mid = arm([(0, front, chin - 0.0025)])[0]
+on = lambda p: 'Avatar_Head' if (Vector(p) - Vector(mid)).dot(Vector(arm([up_c])[0]) - Vector(mid)) > 0 else 'Avatar_Spine2'
+export_as([new_mesh_obj('Pieces', arm(verts), faces, weights=lambda p: {on(p): 1.0})], 'pieces')
+
+# underarm: a box on the chest hanging 4 cm off the torso's side under the left arm: the arm swings onto it in
+# Walk, near where the bare torso folds into itself, but the box doesn't follow the skin, so it's the item's clip
+ub = [base('uBody').matrix_world @ p.co for p in base('uBody').data.vertices]
+pit_z = 1.36
+side = [p for p in ub if abs(p.z - pit_z) < 0.02 and abs(p.y) < 0.06 and p.x > 0]
+torso_x = max(p.x for p in side if p.x < 0.16)          # the torso's side, not the arm (further out at rest)
+v, f = cube((torso_x + 0.04 + 0.02, 0.0, pit_z), 0.02)
+export_as([new_mesh_obj('Underarm', arm(v), f, weights=rigid('Avatar_Spine2'))], 'underarm')
+
+# shirt: the base uBody pushed out 3 mm along its normals, with a cloth material, keeping the body's weights
+src = base('uBody')
+sh = src.copy()
+sh.data = src.data.copy()
+sh.name = 'Shirt'
+k = 0.003 / src.matrix_world.to_scale()[0]
+for v in sh.data.vertices:
+    v.co += v.normal * k
+sh.data.materials.clear()
+sh.data.materials.append(bpy.data.materials.new('shirt'))
+bpy.context.scene.collection.objects.link(sh)
+export_as([sh], 'shirt')
+# kneebox: a box on the hips 2 cm in front of the left knee: the leg swings into it in Walk (a real clip, nowhere
+# near a place the bare body overlaps itself)
+lb = base('lBody')
+pts = [lb.matrix_world @ p.co for p in lb.data.vertices]
+knee_z = min(p.z for p in pts) + 0.45 * (max(p.z for p in pts) - min(p.z for p in pts))
+leftx = armature().matrix_world @ armature().data.bones['Avatar_LeftUpLeg'].head_local
+ring = [p for p in pts if abs(p.z - knee_z) < 0.02 and (p.x > 0) == (leftx.x > 0)]
+kx = sum(p.x for p in ring) / len(ring)
+ky = min(p.y for p in ring) - 0.02 - 0.03
+v, f = cube((kx, ky, knee_z), 0.03)
+export_as([new_mesh_obj('KneeBox', arm(v), f, weights=rigid('Avatar_Hips'))], 'kneebox')
 print('CLIP_ITEMS DONE')

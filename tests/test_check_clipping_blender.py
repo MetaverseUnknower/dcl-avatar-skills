@@ -22,8 +22,8 @@ BLENDER = os.environ.get('BLENDER') or shutil.which('blender') or (MAC_BLENDER i
 BLENDER4 = os.environ.get('BLENDER4') or (MAC_BLENDER4 if os.path.exists(MAC_BLENDER4) else None)
 AVATAR = os.path.join(os.environ.get('DCL_AVATAR_DIR', ''), 'AvatarShape_A.blend')
 ANIMS = os.environ.get('DCL_ANIMS') or os.path.expanduser('~/.cache/dcl-animations')
-# Idle (gated), an unskinned emote-wheel file (needs the bind pose) and a skinned emote (carries one)
-CLIPS = ('Idle.anim', 'clap.glb', 'Get_Hit.glb')
+# Idle (gated), Walk, an unskinned emote-wheel file (needs the bind pose) and a skinned emote (carries one)
+CLIPS = ('Idle.anim', 'Walk.anim', 'clap.glb', 'Get_Hit.glb')
 
 needs = pytest.mark.skipif(
     not BLENDER or not os.path.exists(AVATAR) or not all(os.path.exists(os.path.join(ANIMS, c)) for c in CLIPS),
@@ -45,11 +45,11 @@ def built(tmp_path_factory):
     return items, anims
 
 
-def check(blender, built, item, category, tmp_path):
+def check(blender, built, item, category, tmp_path, gate='Idle'):
     items, anims = built
     report = tmp_path / 'report.json'
     p = subprocess.run([blender, '-b', AVATAR, '--python', CHECKER, '--', '--glb', str(items / item),
-                        '--category', category, '--anims', str(anims), '--gate', 'Idle', '--json', str(report)],
+                        '--category', category, '--anims', str(anims), '--gate', gate, '--json', str(report)],
                        capture_output=True, text=True, timeout=600)
     out = p.stdout + p.stderr
     assert 'Traceback' not in out, out[-3000:]
@@ -95,3 +95,41 @@ def test_a_garment_named_like_a_body_mesh_is_still_checked_against_the_body(buil
     # creators leave body names on garments (pants, shirts, a whole skin's outfit): only skin material is body
     code, out, report = check(BLENDER, built, 'garment.glb', 'hat', tmp_path)
     assert [lb for lb in labels(report) if lb.startswith('M_uBody_BaseMesh x ubody')], sorted(labels(report))
+
+
+@needs
+def test_overlaps_between_the_items_own_pieces_are_reported_not_gated(built, tmp_path):
+    # in labelled Marketplace frames, 29 of 36 piece-vs-piece hits were the design (layers), so a person judges them
+    code, out, report = check(BLENDER, built, 'pieces.glb', 'hat', tmp_path)
+    idle = report['clips']['Idle']
+    assert [h for f in idle['clipping'] for h in f['hits'] if h.startswith('Pieces x itself')], idle
+    assert idle['status'] != 'FAIL' and code == 0, out[-3000:]
+
+
+@needs
+def test_an_overlap_the_bare_body_has_there_too_is_blamed_on_the_animation(built, tmp_path):
+    # the arms coming down fold the bare torso into itself at the armpit: a shirt hugging it goes in with it
+    code, out, report = check(BLENDER, built, 'shirt.glb', 'hat', tmp_path)
+    idle = report['clips']['Idle']
+    hits = [h for f in idle['clipping'] for h in f['hits']]
+    assert hits and all('bare body' in h for h in hits), sorted(set(hits))
+    assert code == 0, out[-3000:]
+
+
+@needs
+def test_a_real_clip_away_from_body_overlaps_still_fails(built, tmp_path):
+    code, out, report = check(BLENDER, built, 'kneebox.glb', 'hat', tmp_path, gate='Walk')
+    walk = report['clips']['Walk']
+    assert walk['status'] == 'FAIL' and code == 1, out[-3000:]
+    assert any(not ('bare' in h) for f in walk['clipping'] for h in f['hits'])
+    idle = report['clips']['Idle']               # the knee is in it at rest pose too: not excused by a hand elsewhere
+    assert all('bare' not in h for f in idle['clipping'] for h in f['hits']), idle['clipping'][:1]
+
+
+@needs
+def test_a_piece_hanging_off_the_body_is_not_excused_by_the_bare_body(built, tmp_path):
+    # a chain or a bulky garment doesn't follow the skin: only polygons hugging the body at rest go where it goes
+    code, out, report = check(BLENDER, built, 'underarm.glb', 'hat', tmp_path, gate='Walk')
+    hits = [h for f in report['clips']['Walk']['clipping'] for h in f['hits']]
+    assert hits and not [h for h in hits if 'bare body' in h], sorted(set(hits))
+    assert code == 1
