@@ -79,7 +79,7 @@ function draw(){const n=C.filter(c=>L[c.id]).length;$('#prog').style.width=(100*
  $('#imgs').innerHTML=c.images.map((src,i)=>`<figure class="${c.kind=='control'?'':'x'}"><img src="${src}" loading="eager"><figcaption>${c.kind=='control'?CAPC[i]:CAP[i]}</figcaption></figure>`).join('');
  const lab=L[c.id]||{},blind=$('#bl').checked&&!lab.v;
  const det=c.kind=='rest'?`REST overlap the skill asks you to judge, ${c.depth_cm} cm deep`:c.kind=='control'?'detector: clean frame (random control)':
-  c.detector=='clip'?`detector: CLIP ${c.depth_cm} cm deep${c.gated?' (gated clip → FAIL)':' (reported clip)'}${c.bare_hand?' · bare hand already in thigh':''}`:
+  c.detector=='clip'?`detector: CLIP ${c.depth_cm} cm deep${c.gated?' (gated clip → FAIL)':' (reported clip)'}${c.bare_hand?' · bare body overlaps here too':''}`:
   c.kind=='seam'?`detector: clean (masked as rest seam; ${c.depth_cm} cm deep, grew ${c.growth_cm} cm from ${c.rest_depth_cm} at rest)`:`detector: graze, ${c.depth_cm} cm (under threshold)`;
  $('#side').innerHTML=`<img class="thumb" src="${c.thumb}" onerror="this.remove()"><h2>${esc(c.item_name)}</h2>
  <div class="mut">${c.category} · ${c.shape} · <a href="${c.marketplace}" target="_blank" style="color:var(--acc)">marketplace</a></div>

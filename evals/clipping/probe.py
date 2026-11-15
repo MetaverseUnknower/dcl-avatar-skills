@@ -169,7 +169,7 @@ clip_frames = dict(G['clips'])
 def bare_hand(clip, frame, label):
     for c in report['clips'].get(clip, {}).get('clipping', []):
         if c['frame'] == frame:
-            return any(k.startswith(label) and 'bare hand' in k for k in c['hits'])
+            return any(k.startswith(label) and 'bare body' in k for k in c['hits'])
     return False
 
 

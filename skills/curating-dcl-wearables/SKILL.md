@@ -69,7 +69,8 @@ blender -b <BaseFemale avatar .blend> --python <skill-dir>/scripts/check_clippin
 - The default is Idle, Walk and Jog. The bare avatar clips itself in some Run frames, and rigid items can't clear every emote.
 - For clothing, also gate the matching showcase clips, since buyers watch them: `--gate Idle,Walk,Jog,showcase_Outfit_Upper_v01,showcase_Outfit_Upper_v02,showcase_Outfit_Upper_v03`. The others are Outfit_Lower (lower_body), Outfit_Shoes (feet), Outfit_Hand (hands_wear) and Accessories.
 - For a "clean in every emote" item: `--gate all --except SittingChair_v01,SittingGround_v01,KO,Run`.
-- Contacts tagged `bare hand already in thigh` are Decentraland's own female idle, not the item.
+- Contacts tagged `(bare body overlaps here too)` hug the skin where Decentraland's bare avatar folds into itself in that frame (an arm into the torso, a hand into the thigh): the animation's doing, reported but not gated. Look anyway if the item is thick there.
+- Contacts tagged `(item pieces: judge)` are the item's own pieces meeting in motion: reported, not gated. Judge them like REST lines: layers lying on each other are fine, a plate or strap through another piece is a bug.
 - Reported (ungated) clips still go in the verdict: which clips clip, how deep, and where.
 - Spring-bone pieces are checked at rest only; the explorer simulates them, so watch them in gates 4 and 6.
 - Iterate on one clip with `--only Jog`.
