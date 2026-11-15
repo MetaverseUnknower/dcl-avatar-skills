@@ -21,6 +21,9 @@ fine, a strap through a buckle is not.
 --gate picks the clips that must pass (exit 1 if one fails); the rest are reported. Default Idle,Walk,Jog: the bare
 avatar intersects itself in some Run frames, and rigid items can't clear every emote. `--gate all --except ...`
 makes every other clip must-pass. Spring-bone geometry is checked at rest only (the explorer simulates it).
+Item meshes named after a base-body part (M_uBody_BaseMesh, F_Feet_BaseMesh.001, ...) are taken as body the creator
+kept: checked against the item's other pieces, not against the body or each other. An item with no rig (a plain mesh)
+takes the bind pose for the emote-wheel clips from a skinned animation in --anims.
 """
 import argparse, bpy, collections, glob, json, math, os, re, sys
 from mathutils import Matrix, Quaternion, Vector
@@ -70,19 +73,23 @@ visible = {k: o for k, o in body.items() if k not in hidden}
 before = set(bpy.data.objects)
 bpy.ops.import_scene.gltf(filepath=A.glb)
 new = [o for o in bpy.data.objects if o not in before]
-for o in new:
-    if o.type == 'MESH':
-        mw = o.matrix_world.copy()
-        o.parent = av
-        o.matrix_world = mw
-        for m in o.modifiers:
-            if m.type == 'ARMATURE':
-                m.object = av
-items = [o for o in new if o.type == 'MESH']
-for o in [o for o in new if o.type != 'MESH']:
+# Blender 4.x's importer adds a bone display shape (an Icosphere) for each armature: not part of the item
+shapes = {pb.custom_shape for o in new if o.type == 'ARMATURE' for pb in o.pose.bones if pb.custom_shape}
+items = [o for o in new if o.type == 'MESH' and o not in shapes]
+for o in items:
+    mw = o.matrix_world.copy()
+    o.parent = av
+    o.matrix_world = mw
+    for m in o.modifiers:
+        if m.type == 'ARMATURE':
+            m.object = av
+for o in [o for o in new if o not in items]:
     bpy.data.objects.remove(o, do_unlink=True)
 if not items:
     sys.exit('no meshes in ' + A.glb)
+# Meshes the creator kept from the base body (named like it, e.g. M_uBody_BaseMesh): they overlap the other body parts
+# where the bare avatar overlaps itself, which is never a clip, so they're checked against the item's other pieces only
+STANDIN = {o.name for o in items if 'basemesh' in o.name.lower() and part_key(o)}
 bones = {b.name for b in av.data.bones}
 
 
@@ -174,6 +181,8 @@ def measure(at_rest):
             cache[o.name] = Snap(o, skip)
         return cache[o.name]
     for o in items:
+        if o.name in STANDIN:
+            continue
         sa = get(o, () if at_rest else ITEM[o.name]['spring'])
         for k, b in visible.items():
             sb = get(b)
@@ -183,6 +192,8 @@ def measure(at_rest):
                                       if a < b and isl[a] != isl[b] and not cor[a] & cor[b]}, sa, sa)
     for i, o in enumerate(items):
         for o2 in items[i + 1:]:
+            if o.name in STANDIN and o2.name in STANDIN:
+                continue
             out[f'{o.name} x {o2.name}'] = (set(get(o).tree.overlap(get(o2).tree)), get(o), get(o2))
     return out
 
@@ -311,10 +322,7 @@ def gltf_world(path):
     the file's first animation sampled on top. Returns (world(t) -> (rotations, hips position), duration);
     world(None) is the un-animated node pose."""
     import struct
-    data = open(path, 'rb').read()
-    n = struct.unpack('<I', data[12:16])[0]
-    g = json.loads(data[20:20 + n])
-    bs = 20 + n + 8
+    data, g, bs = gltf_json(path)
     def acc(i):
         a = g['accessors'][i]
         bv = g['bufferViews'][a['bufferView']]
@@ -375,16 +383,60 @@ def gltf_world(path):
     return world, T
 
 
-# Unskinned emote files (the emote-wheel ones) store their FIRST FRAME as the node TRS and carry no bind pose, so
-# their rest can't come from themselves. The wearable under test is exported in the rest pose on the same rig: its
-# node TRS is the bind pose every emote frame is measured against.
-BIND_ROT, BIND_HIPS = gltf_world(A.glb)[0](None)
+def gltf_json(path):
+    import struct
+    data = open(path, 'rb').read()
+    n = struct.unpack('<I', data[12:16])[0]
+    return data, json.loads(data[20:20 + n]), 20 + n + 8
+
+
+def gltf_bind(path):
+    """A skinned glTF file's bind pose from its inverse bind matrices, as gltf_world's world(None) gives it, or None
+    when the file has no skin on the Avatar_* rig."""
+    import struct
+    data, g, bs = gltf_json(path)
+    skin = next((s for s in g.get('skins', []) if 'inverseBindMatrices' in s
+                 and any(g['nodes'][j].get('name') == 'Avatar_Hips' for j in s['joints'])), None)
+    if not skin:
+        return None
+    a = g['accessors'][skin['inverseBindMatrices']]
+    bv = g['bufferViews'][a['bufferView']]
+    off = bs + bv.get('byteOffset', 0) + a.get('byteOffset', 0)
+    C = Matrix.Rotation(math.radians(90), 4, 'X')
+    world = {}
+    for k, j in enumerate(skin['joints']):
+        name = g['nodes'][j].get('name')
+        if name in REST_ARM:
+            m = struct.unpack_from('<16f', data, off + 64 * k)
+            world[name] = C @ Matrix([m[0:4], m[4:8], m[8:12], m[12:16]]).transposed().inverted()
+    return {n: w.to_quaternion() for n, w in world.items()}, world['Avatar_Hips'].translation.copy()
+
+
+def bind_pose():
+    """Unskinned emote files (the emote-wheel ones) store their FIRST FRAME as the node TRS and carry no bind pose, so
+    their rest can't come from themselves. The wearable under test is exported in the rest pose on the same rig: its
+    node TRS is the bind pose every emote frame is measured against. An item with no rig (a plain mesh) has none, so
+    it comes from a skinned animation on the same rig instead (their inverse bind matrices give the same pose)."""
+    if any(nd.get('name') == 'Avatar_Hips' for nd in gltf_json(A.glb)[1]['nodes']):
+        return gltf_world(A.glb)[0](None)
+    for path in sorted(glob.glob(os.path.join(A.anims, '*.glb'))):
+        bind = gltf_bind(path)
+        if bind:
+            return bind
+    return None
+
+
+BIND = bind_pose()
 
 
 def gltf_node_frames(path):
+    if BIND is None:
+        print(f'warning: {os.path.basename(path)} skipped: no bind pose (the item has no rig and no skinned animation '
+              f'in {A.anims} has one)')
+        return None, []
     world, T = gltf_world(path)
     steps = max(1, int(T * A.fps) + 1)
-    return (BIND_ROT, BIND_HIPS), [world(k / A.fps) for k in range(steps)]
+    return BIND, [world(k / A.fps) for k in range(steps)]
 
 
 def glb_frames(path):
@@ -407,11 +459,11 @@ def glb_frames(path):
             cur = {n: (SW @ SP[n].matrix).to_quaternion() for n in rest_rot}
             return cur, (SW @ SP['Avatar_Hips'].head) - hips0
     elif 'Avatar_Hips' in empties:
-        (rest_rot, hips0), samples = gltf_node_frames(path)
-        hips_start = samples[0][1]
+        bind, samples = gltf_node_frames(path)
+        rest_rot = bind[0] if bind else {}
         for cur, hips in samples:
             arm = {nm: MWq.inverted() @ (cur[nm] @ rest_rot[nm].inverted()) @ REST_ARM[nm] for nm in cur if nm in rest_rot}
-            frames.append(to_local(arm, hips - hips_start))     # travel from where the emote starts
+            frames.append(to_local(arm, hips - samples[0][1]))  # travel from where the emote starts
         f0, f1, sample = 0, -1, None
     else:
         f0, f1, sample = 0, -1, None
