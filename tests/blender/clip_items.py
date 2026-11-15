@@ -4,12 +4,14 @@ blender -b AvatarShape_A.blend --python clip_items.py -- <out_dir> <wearlib scri
 Writes, in <out_dir>:
   rigid.glb      an unrigged box (no armature, no Avatar_* nodes) 60 cm in front of the chest
   skinned.glb    a box skinned to Avatar_Head, 25 cm above the head
-  bodycopy.glb   a full copy of the avatar's lBody named M_lBody_BaseMesh, skinned like the original
+  bodycopy.glb   a full copy of the avatar's lBody named M_lBody_BaseMesh, skinned like the original (AvatarSkin_MAT)
+  garment.glb    a cloth strip through the chest (material 'pants') named M_uBody_BaseMesh
 """
 import os
 import sys
 
 import bpy
+from mathutils import Vector
 
 out_dir, scripts = sys.argv[sys.argv.index('--') + 1:][:2]
 sys.path.insert(0, scripts)
@@ -44,10 +46,19 @@ bpy.context.scene.collection.objects.link(box)
 export_plain(box, os.path.join(out_dir, 'rigid.glb'))
 bpy.data.objects.remove(box, do_unlink=True)
 
-# skinned: a head-riding box well clear of the head (armature space: the head top is about 1.75 m up)
-head_top = max((armature().matrix_world.inverted() @ (base('Head').matrix_world @ p.co)).z for p in base('Head').data.vertices)
-v, f = cube((0, 0, head_top + 0.25), 0.05)
-hat = new_mesh_obj('Test_Hat', v, f, weights=rigid('Avatar_Head'))
+def arm(points):
+    """World points -> armature space (the avatar armature is scaled 0.01 and rotated: cm, Y up)."""
+    inv = armature().matrix_world.inverted()
+    return [tuple(inv @ Vector(p)) for p in points]
+
+
+def top(part):
+    return max((base(part).matrix_world @ p.co).z for p in base(part).data.vertices)
+
+
+# skinned: a head-riding box well clear of the head
+v, f = cube((0, 0, top('Head') + 0.25), 0.05)
+hat = new_mesh_obj('Test_Hat', arm(v), f, weights=rigid('Avatar_Head'))
 export_wearable([hat], out_dir, 'skinned')
 for fn in os.listdir(out_dir):
     if fn.startswith('skinned_'):
@@ -64,4 +75,16 @@ export_wearable([cp], out_dir, 'bodycopy')
 for fn in os.listdir(out_dir):
     if fn.startswith('bodycopy_'):
         rename(fn, 'bodycopy.glb')
+bpy.data.objects.remove(cp, do_unlink=True)
+
+# garment: a strip through the chest with a cloth material, but named like a body mesh
+chest = top('uBody') - 0.25
+v = [(x, y, z) for x in (-0.4, 0.4) for y in (-0.01, 0.01) for z in (chest - 0.01, chest + 0.01)]
+f = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+cloth = bpy.data.materials.new('pants')
+strip = new_mesh_obj('M_uBody_BaseMesh', arm(v), f, weights=rigid('Avatar_Spine2'), mats=(cloth,))
+export_wearable([strip], out_dir, 'garment')
+for fn in os.listdir(out_dir):
+    if fn.startswith('garment_'):
+        rename(fn, 'garment.glb')
 print('CLIP_ITEMS DONE')

@@ -21,8 +21,8 @@ fine, a strap through a buckle is not.
 --gate picks the clips that must pass (exit 1 if one fails); the rest are reported. Default Idle,Walk,Jog: the bare
 avatar intersects itself in some Run frames, and rigid items can't clear every emote. `--gate all --except ...`
 makes every other clip must-pass. Spring-bone geometry is checked at rest only (the explorer simulates it).
-Item meshes named after a base-body part (M_uBody_BaseMesh, F_Feet_BaseMesh.001, ...) are taken as body the creator
-kept: checked against the item's other pieces, not against the body or each other. An item with no rig (a plain mesh)
+Item polygons on an AvatarSkin material are skin the creator kept: checked against the item's other polygons, not
+against the body or other skin (whatever the mesh is called). An item with no rig (a plain mesh)
 takes the bind pose for the emote-wheel clips from a skinned animation in --anims.
 """
 import argparse, bpy, collections, glob, json, math, os, re, sys
@@ -87,9 +87,16 @@ for o in [o for o in new if o not in items]:
     bpy.data.objects.remove(o, do_unlink=True)
 if not items:
     sys.exit('no meshes in ' + A.glb)
-# Meshes the creator kept from the base body (named like it, e.g. M_uBody_BaseMesh): they overlap the other body parts
-# where the bare avatar overlaps itself, which is never a clip, so they're checked against the item's other pieces only
-STANDIN = {o.name for o in items if 'basemesh' in o.name.lower() and part_key(o)}
+# Skin the creator kept or rebuilt (polygons on an AvatarSkin material, the one the explorer tints with the player's
+# skin colour): it overlaps the body where the bare avatar overlaps itself, which is never a clip, so skin is checked
+# against the item's other polygons only, never against the body or other skin. Mesh names don't tell: creators leave
+# body names like M_uBody_BaseMesh on pants, shirts, even a whole skin's outfit.
+def skin_polys(o):
+    skin = {i for i, s in enumerate(o.material_slots) if s.material and s.material.name.lower().startswith('avatarskin')}
+    return {p.index for p in o.data.polygons if p.material_index in skin}
+
+
+SKIN = {o.name: skin_polys(o) for o in items}
 bones = {b.name for b in av.data.bones}
 
 
@@ -181,20 +188,19 @@ def measure(at_rest):
             cache[o.name] = Snap(o, skip)
         return cache[o.name]
     for o in items:
-        if o.name in STANDIN:
-            continue
         sa = get(o, () if at_rest else ITEM[o.name]['spring'])
+        skin = SKIN[o.name]
         for k, b in visible.items():
             sb = get(b)
-            out[f'{o.name} x {k}'] = (set(sa.tree.overlap(sb.tree)), sa, sb)
+            out[f'{o.name} x {k}'] = ({(a, c) for a, c in sa.tree.overlap(sb.tree) if a not in skin}, sa, sb)
         isl, cor = ITEM[o.name]['island'], ITEM[o.name]['corners']
         out[f'{o.name} x itself'] = ({(a, b) for a, b in sa.tree.overlap(sa.tree)
-                                      if a < b and isl[a] != isl[b] and not cor[a] & cor[b]}, sa, sa)
+                                      if a < b and isl[a] != isl[b] and not cor[a] & cor[b]
+                                      and not (a in skin and b in skin)}, sa, sa)
     for i, o in enumerate(items):
         for o2 in items[i + 1:]:
-            if o.name in STANDIN and o2.name in STANDIN:
-                continue
-            out[f'{o.name} x {o2.name}'] = (set(get(o).tree.overlap(get(o2).tree)), get(o), get(o2))
+            out[f'{o.name} x {o2.name}'] = ({(a, b) for a, b in get(o).tree.overlap(get(o2).tree)
+                                             if not (a in SKIN[o.name] and b in SKIN[o2.name])}, get(o), get(o2))
     return out
 
 

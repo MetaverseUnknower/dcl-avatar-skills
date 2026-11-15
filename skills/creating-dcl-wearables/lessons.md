@@ -162,6 +162,13 @@ Each entry: what went wrong → the rule. Add your own as you hit them.
   them keeps the head's skin weights, so the beard follows the face in every pose (a projected grid needed weight
   transfers and still looked wonky). Paint the outline, mouth gap and details in the alpha by 3D position; trace the
   mouth gap from the base mouth card's opaque texels, and drop big faces that reach outside the outline.
+- **A chain necklace hung well off the chest still clipped through it in most emotes** (a published Marketplace
+  earring, seen in the clipping eval: through the torso in the accessory showcases, Throw and Swing). Every vertex
+  was 100% on one bone, 89% `Avatar_Neck` and the rest `Avatar_Head`, down to 35 cm below the collarbones: the chest
+  follows the spine while the chain stays locked to the neck, so a torso bend or twist sweeps the chest into it. The
+  gap only delays the clip, and it makes the chain float over a bare chest. → Weight anything resting on the chest like
+  the body under it: `Avatar_Neck` at the clasp, blending to `Avatar_Spine2` (and `Spine1` lower down) where it lies
+  on the chest (`weights_from(base('uBody'))`), and keep it close to the body.
 
 ## Textures and materials
 - 2 materials / 2 textures: a third slipped in unnoticed. → Atlas; count before reporting.

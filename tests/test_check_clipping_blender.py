@@ -88,3 +88,10 @@ def test_a_mesh_kept_from_the_base_body_is_not_checked_against_the_body(built, t
                     if lb.startswith('M_lBody_BaseMesh x ') and lb.split(' x ')[1].split(' (')[0] in body]
     assert not against_body, sorted(labels(report))
     assert code == 0, out[-3000:]
+
+
+@needs
+def test_a_garment_named_like_a_body_mesh_is_still_checked_against_the_body(built, tmp_path):
+    # creators leave body names on garments (pants, shirts, a whole skin's outfit): only skin material is body
+    code, out, report = check(BLENDER, built, 'garment.glb', 'hat', tmp_path)
+    assert [lb for lb in labels(report) if lb.startswith('M_uBody_BaseMesh x ubody')], sorted(labels(report))
